@@ -1,0 +1,18 @@
+{
+  "name": "addasplit",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.18.3",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "test": "corepack pnpm --filter @addasplit/split-engine test",
+    "typecheck": "corepack pnpm --filter @addasplit/split-engine typecheck && corepack pnpm --filter @addasplit/guest-web typecheck && corepack pnpm --filter @addasplit/host-mobile typecheck",
+    "dev:guest": "corepack pnpm --filter @addasplit/guest-web dev",
+    "dev:host": "corepack pnpm --filter @addasplit/host-mobile start",
+    "dev:host:web": "corepack pnpm --filter @addasplit/host-mobile web",
+    "test:host:web": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}
