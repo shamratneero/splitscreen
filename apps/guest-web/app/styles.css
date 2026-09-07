@@ -18,3 +18,15 @@ h1 { margin:0; font-size:28px; line-height:1.22; letter-spacing:-.7px; } .split-
 
 /* Inline failure from a rejected claim or RPC error. */
 .quiet.error { color:#B3261E; font-weight:500; }
+
+/* Payment instructions: the amount and the number are what people act on. */
+.pay-header { display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; }
+.success-mark.small { width:44px; height:44px; font-size:22px; }
+.send-card { display:flex; flex-direction:column; align-items:center; gap:4px; padding:20px; margin:18px 0 14px;
+  border-radius:16px; background:#eef4f0; }
+.send-label { color:var(--muted); font-size:13px; }
+.send-card .pay-amount { font-size:38px; letter-spacing:-1px; }
+.payment-method .number { font-variant-numeric:tabular-nums; letter-spacing:.3px; }
+.payment-method.bkash b { color:#E2136E; }
+.payment-method.nagad b { color:#EE7623; }
+.quiet.copied { color:var(--green); font-weight:500; text-align:center; }

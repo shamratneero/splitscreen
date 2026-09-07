@@ -30,6 +30,18 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  /** Copy with visible confirmation — a silent copy leaves people unsure it worked. */
+  const copyValue = async (value: string, message: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(message);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      setCopied("Couldn’t copy — select the number manually.");
+    }
+  };
 
   // Identify this browser, then re-read the split so our own claims come back.
   useEffect(() => {
@@ -176,31 +188,46 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   if (stage === "pay")
     return (
       <section className="screen">
-        <header className="split-header">
-          <p className="eyebrow">Pay {hostName}</p>
-          <h1 className="pay-amount">{taka(myTotals.total)}</h1>
-          <button className="text-button" onClick={() => navigator.clipboard?.writeText(String(myTotals.total))}>
+        <header className="split-header pay-header">
+          <div className="success-mark small">✓</div>
+          <h1>Thanks, {name.trim() || "friend"}!</h1>
+          <p>Here’s how to pay.</p>
+        </header>
+
+        <div className="send-card">
+          <span className="send-label">Send</span>
+          <strong className="pay-amount">{taka(myTotals.total)}</strong>
+          <span className="send-label">to {hostName}</span>
+          <button className="text-button" onClick={() => copyValue(String(myTotals.total), "Amount copied")}>
             Copy amount
           </button>
-        </header>
-        {split.split.hostBkash ? (
-          <div className="payment-method">
-            <b>bKash</b>
-            <span>{split.split.hostBkash}</span>
-            <button className="text-button" onClick={() => navigator.clipboard?.writeText(split.split.hostBkash!)}>Copy</button>
-          </div>
-        ) : null}
-        {split.split.hostNagad ? (
-          <div className="payment-method">
-            <b>Nagad</b>
-            <span>{split.split.hostNagad}</span>
-            <button className="text-button" onClick={() => navigator.clipboard?.writeText(split.split.hostNagad!)}>Copy</button>
-          </div>
-        ) : null}
+        </div>
+
+        {(
+          [
+            { key: "bkash", label: "bKash", number: split.split.hostBkash },
+            { key: "nagad", label: "Nagad", number: split.split.hostNagad },
+          ] as const
+        )
+          .filter((method) => method.number)
+          .map((method) => (
+            <div className={`payment-method ${method.key}`} key={method.key}>
+              <b>{method.label}</b>
+              <span className="number">{method.number}</span>
+              <button className="text-button" onClick={() => copyValue(method.number!, `${method.label} number copied`)}>
+                Copy
+              </button>
+            </div>
+          ))}
+
         {!split.split.hostBkash && !split.split.hostNagad ? (
           <p className="quiet">{hostName} hasn’t added a payment number yet — ask them directly.</p>
         ) : null}
-        <p className="quiet">After sending the money, {hostName} will mark your payment as received.</p>
+
+        <p className="quiet">
+          Open your bKash or Nagad app and send the money, then tap below. {hostName} will confirm once it arrives.
+        </p>
+        {copied ? <p className="quiet copied">{copied}</p> : null}
         {banner}
         <footer className="bottom-bar">
           <button className="button" disabled={busy} onClick={() => submitPayment(split.split.hostBkash ? "bkash" : "nagad")}>
@@ -246,6 +273,8 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
               label={item.name}
               value={myQuantities[item.id] ?? 0}
               maximum={availability[item.id] ?? 0}
+              // Taps before the session exists would be dropped silently.
+              disabled={!sessionId || busy}
               onChange={(value) => update(item.id, value)}
             />
           </article>

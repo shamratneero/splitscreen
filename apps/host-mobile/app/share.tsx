@@ -9,6 +9,7 @@ import { useTheme } from '../components/theme';
 import { useDraft } from '../state/draft';
 import { publishSplit } from '../lib/publish-split';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { isLoopbackURL, resolveGuestBaseURL } from '../lib/guest-url';
 
 export default function ShareScreen() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function ShareScreen() {
   const { draft } = useDraft();
   const [notice, setNotice] = useState('');
   const [token, setToken] = useState<string | null>(null);
+  const [splitId, setSplitId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Publish the draft once, on arrival, so the QR encodes this real bill.
@@ -26,7 +28,11 @@ export default function ShareScreen() {
       return;
     }
     publishSplit(draft)
-      .then((publicToken) => !cancelled && setToken(publicToken))
+      .then((published) => {
+        if (cancelled) return;
+        setToken(published.publicToken);
+        setSplitId(published.id);
+      })
       .catch((cause) => !cancelled && setError(cause instanceof Error ? cause.message : String(cause)));
     return () => {
       cancelled = true;
@@ -35,8 +41,10 @@ export default function ShareScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const baseURL = process.env.EXPO_PUBLIC_GUEST_URL ?? 'http://localhost:3000';
-  const url = token ? `${baseURL.replace(/\/$/, '')}/s/${token}` : '';
+  const baseURL = resolveGuestBaseURL();
+  const url = token ? `${baseURL}/s/${token}` : '';
+  // A QR pointing at localhost can't be scanned from a phone — say so plainly.
+  const unscannable = Boolean(token) && isLoopbackURL(baseURL);
 
   const copy = async () => {
     if (!url) return;
@@ -55,7 +63,13 @@ export default function ShareScreen() {
   return (
     <Page
       header={<Toolbar title="Invite your table" onBack={() => router.back()} />}
-      footer={<Button title="Back to home" secondary onPress={() => router.replace('/')} />}
+      footer={
+        splitId ? (
+          <Button title="Track claims" icon="people" onPress={() => router.push(`/track/${splitId}`)} />
+        ) : (
+          <Button title="Back to home" secondary onPress={() => router.replace('/')} />
+        )
+      }
     >
       <View style={{ paddingTop: 16 }}>
         <Heading centered title="Share with your friends" subtitle="They don’t need the app. Just a seat at your table." />
@@ -106,8 +120,12 @@ export default function ShareScreen() {
         <Text style={{ color: colors.primary, fontSize: 13, flex: 1 }}>You can claim your items too.</Text>
       </View>
 
-      <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 18, textAlign: 'center' }}>
-        {token ? 'This link is live. Anyone who opens it can claim their items.' : 'Publishing this bill to your guests…'}
+      <Text style={{ color: unscannable ? colors.amber : colors.muted, fontSize: 12, lineHeight: 18, marginTop: 18, textAlign: 'center' }}>
+        {unscannable
+          ? 'This link points at localhost, so scanning it from a phone won’t work. Set EXPO_PUBLIC_GUEST_URL to your deployed address.'
+          : token
+            ? 'This link is live. Anyone who opens it can claim their items.'
+            : 'Publishing this bill to your guests…'}
       </Text>
     </Page>
   );

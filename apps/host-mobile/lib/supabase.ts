@@ -15,8 +15,10 @@ export const supabase = createClient(url ?? 'http://localhost', anonKey ?? 'anon
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
 
-const demoEmail = process.env.EXPO_PUBLIC_DEMO_HOST_EMAIL ?? 'demo@addasplit.test';
-const demoPassword = process.env.EXPO_PUBLIC_DEMO_HOST_PASSWORD ?? 'demo-password-123';
+// Credentials come from .env.local only — never a default in source, which
+// would ship a working login to anyone who can read the repository.
+const demoEmail = process.env.EXPO_PUBLIC_DEMO_HOST_EMAIL;
+const demoPassword = process.env.EXPO_PUBLIC_DEMO_HOST_PASSWORD;
 
 let signInPromise: Promise<string> | null = null;
 
@@ -24,6 +26,12 @@ let signInPromise: Promise<string> | null = null;
 export async function ensureHostSession(): Promise<string> {
   const { data } = await supabase.auth.getSession();
   if (data.session?.user.id) return data.session.user.id;
+
+  if (!demoEmail || !demoPassword) {
+    throw new Error(
+      'Set EXPO_PUBLIC_DEMO_HOST_EMAIL and EXPO_PUBLIC_DEMO_HOST_PASSWORD in apps/host-mobile/.env.local',
+    );
+  }
 
   signInPromise ??= supabase.auth
     .signInWithPassword({ email: demoEmail, password: demoPassword })

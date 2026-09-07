@@ -17,3 +17,6 @@ playwright-report
 # Expo generates these native projects from app.config.ts (CNG).
 apps/host-mobile/ios
 apps/host-mobile/android
+
+# Generated paste-into-SQL-editor bundle; regenerate from migrations.
+supabase/setup/all.sql

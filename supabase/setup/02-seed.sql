@@ -1,7 +1,10 @@
 -- AddaSplit demo seed. Creates one real host account and one shareable bill so
--- the guest flow can be exercised end to end before host publishing exists.
+-- the guest flow can be exercised end to end before real host accounts exist.
 --
---   host login: demo@addasplit.test / demo-password-123
+-- SECURITY: replace CHANGE_ME below before running, and put the same value in
+-- apps/host-mobile/.env.local as EXPO_PUBLIC_DEMO_HOST_PASSWORD. Never commit
+-- the real password — this file is tracked, and a working login in a public
+-- repository lets anyone sign in as the host.
 --
 -- Safe to re-run: every statement is idempotent.
 
@@ -15,11 +18,25 @@ insert into auth.users (
   '00000000-0000-0000-0000-000000000000',
   '11111111-1111-1111-1111-111111111111',
   'authenticated', 'authenticated', 'demo@addasplit.test',
-  crypt('demo-password-123', gen_salt('bf')),
+  crypt('CHANGE_ME', gen_salt('bf')),
   now(), now(), now(),
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{"display_name":"Neero"}'::jsonb
 ) on conflict (id) do nothing;
+
+-- GoTrue scans these columns into non-nullable Go strings. A hand-inserted row
+-- leaves them NULL, which makes every sign-in fail with
+-- "Database error querying schema", so normalise them to empty string.
+update auth.users set
+  confirmation_token         = coalesce(confirmation_token, ''),
+  recovery_token             = coalesce(recovery_token, ''),
+  email_change               = coalesce(email_change, ''),
+  email_change_token_new     = coalesce(email_change_token_new, ''),
+  email_change_token_current = coalesce(email_change_token_current, ''),
+  phone_change               = coalesce(phone_change, ''),
+  phone_change_token         = coalesce(phone_change_token, ''),
+  reauthentication_token     = coalesce(reauthentication_token, '')
+where id = '11111111-1111-1111-1111-111111111111';
 
 -- Required by GoTrue for email/password sign-in.
 insert into auth.identities (

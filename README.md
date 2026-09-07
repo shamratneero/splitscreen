@@ -17,15 +17,19 @@ This repository contains a runnable **prototype**, not a production-ready MVP.
   instructions, and a local payment-reported state.
 - Pure integer-taka split engine with deterministic remainder allocation and
   11 unit tests, plus a host browser regression test.
-- Initial PostgreSQL/Supabase schema, RLS baseline, and row-locking claim RPC.
-  These are not yet connected to the apps or verified against a live database.
+- PostgreSQL/Supabase schema with RLS, security-definer guest RPCs, and a
+  row-locking claim path, connected to both apps and verified against a live
+  database.
+- Host publishes a draft to a real split and shares a working QR; guests claim
+  through it with no account; a live tracking screen shows who claimed what and
+  lets the host mark payments received.
 
-**Current limits:** drafts and guest claims are held in memory and reset on
-reload. The QR opens sample data, not the host's newly entered bill. Payment
-numbers are placeholders. Guest amounts still use a separate preview calculation.
-Camera/OCR, authentication, persistent claims, realtime tracking, and settlement
-remain to be implemented. Native JavaScript export is not an Xcode compilation
-or a physical-device validation.
+**Current limits:** the host signs in as a single seeded demo account, so real
+signup and multi-host support are still missing. Camera/OCR is not implemented,
+shared-item splitting exists in the schema but not the UI, and guests refresh on
+interaction rather than over realtime. Payment confirmation is host-attested;
+there is no bKash/Nagad API integration. Native JavaScript export is not an
+Xcode compilation or a physical-device validation.
 
 ## Workspace
 
@@ -60,7 +64,23 @@ Start the guest app in another terminal:
 corepack pnpm dev:guest
 ```
 
-Open `http://localhost:3000/s/demo-sultans-dine`.
+Open the guest link the host app's share screen prints.
+
+**Scanning the QR from a phone needs a reachable address** — `localhost` will
+not resolve. See [docs/deployment.md](docs/deployment.md); the quickest fix is
+setting `EXPO_PUBLIC_GUEST_URL` to your machine's LAN IP.
+
+## Backend setup
+
+The apps need a Supabase project. Run `supabase/setup/01-schema.sql` then
+`supabase/setup/02-seed.sql` (replace `CHANGE_ME` first) in the SQL editor, then
+fill in:
+
+- `apps/guest-web/.env.local` — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `apps/host-mobile/.env.local` — `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`,
+  `EXPO_PUBLIC_GUEST_URL`, `EXPO_PUBLIC_DEMO_HOST_EMAIL`, `EXPO_PUBLIC_DEMO_HOST_PASSWORD`
+
+These files are gitignored. Never commit the host password.
 
 After dependency or Metro configuration changes, stop the old host server with
 Ctrl+C, then run `corepack pnpm dev:host:web --clear`.

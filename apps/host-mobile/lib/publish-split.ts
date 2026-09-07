@@ -8,12 +8,12 @@ const toInt = (value: string) => {
 
 /**
  * Turns the in-memory draft into a real split the guest link can serve.
- * Returns the public token that goes into the QR code.
+ * Returns the split id (for tracking) and the public token (for the QR).
  *
  * Writes go through normal RLS as the signed-in host — splits and items are
  * both covered by the "host owns …" policies.
  */
-export async function publishSplit(draft: Draft): Promise<string> {
+export async function publishSplit(draft: Draft): Promise<{ id: string; publicToken: string }> {
   const hostUserId = await ensureHostSession();
 
   const subtotal = draft.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
@@ -56,5 +56,5 @@ export async function publishSplit(draft: Draft): Promise<string> {
     throw new Error(itemsError.message);
   }
 
-  return split.public_token as string;
+  return { id: split.id as string, publicToken: split.public_token as string };
 }
