@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { Button, Heading, Page, Surface } from '../components/ui';
 import { useTheme } from '../components/theme';
-import { signIn, signUp } from '../lib/supabase';
+import { consumeAuthRedirectError, signIn, signUp } from '../lib/supabase';
 
 export default function SignInScreen() {
   const { colors } = useTheme();
@@ -12,6 +12,13 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // A failed confirmation link lands back here with the reason in the fragment.
+  useEffect(() => {
+    const redirectError = consumeAuthRedirectError();
+    if (redirectError) setError(redirectError);
+  }, []);
 
   const creating = mode === 'up';
   const canSubmit = email.trim().length > 3 && password.length >= 6 && (!creating || name.trim().length > 0);
@@ -19,9 +26,17 @@ export default function SignInScreen() {
   const submit = async () => {
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
-      if (creating) await signUp(email, password, name);
-      else await signIn(email, password);
+      if (creating) {
+        const result = await signUp(email, password, name);
+        if (result === 'confirm-email') {
+          setNotice(`Confirmation sent to ${email.trim()}. Open it on this device, then sign in.`);
+          setMode('in');
+        }
+      } else {
+        await signIn(email, password);
+      }
       // AuthProvider picks the new session up and swaps the tabs in.
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -86,8 +101,14 @@ export default function SignInScreen() {
         </Surface>
 
         {error ? (
-          <Text accessibilityLiveRegion="polite" style={{ color: colors.amber, fontSize: 13, marginTop: 14, textAlign: 'center' }}>
+          <Text accessibilityLiveRegion="polite" style={{ color: colors.amber, fontSize: 13, marginTop: 14, textAlign: 'center', lineHeight: 19 }}>
             {error}
+          </Text>
+        ) : null}
+
+        {notice ? (
+          <Text accessibilityLiveRegion="polite" style={{ color: colors.primary, fontSize: 13, marginTop: 14, textAlign: 'center', lineHeight: 19 }}>
+            {notice}
           </Text>
         ) : null}
 

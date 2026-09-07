@@ -11,17 +11,43 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 /**
  * Sessions persist so a host stays signed in between launches. AsyncStorage is
  * the React Native store; on web it is backed by localStorage, so the same
- * client works on both. detectSessionInUrl stays off because this app never
- * handles an OAuth redirect.
+ * client works on both.
+ *
+ * detectSessionInUrl must be on for web: an email confirmation link comes back
+ * as a token in the URL fragment, and without this the link appears to do
+ * nothing. Native builds never receive such a redirect.
  */
 export const supabase = createClient(url ?? 'http://localhost', anonKey ?? 'anon', {
   auth: {
     storage: AsyncStorage,
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });
+
+/**
+ * Reads an auth error Supabase left in the URL fragment after a failed
+ * redirect, so the app can explain it instead of showing a bare hash.
+ * Returns null when there is nothing to report, and clears the fragment.
+ */
+export function consumeAuthRedirectError(): string | null {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+  const hash = window.location.hash?.replace(/^#/, '');
+  if (!hash || !hash.includes('error')) return null;
+
+  const params = new URLSearchParams(hash);
+  const code = params.get('error_code');
+  const description = params.get('error_description')?.replace(/\+/g, ' ');
+
+  // Don't leave the error in the address bar once it has been shown.
+  window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
+  if (code === 'otp_expired') {
+    return 'That email link has expired or was already used. Request a new one, or ask an admin to turn off email confirmation for this project.';
+  }
+  return description || 'Sign-in link failed. Please try again.';
+}
 
 export type HostProfile = {
   id: string;
@@ -48,17 +74,29 @@ export async function signIn(email: string, password: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function signUp(email: string, password: string, displayName: string): Promise<void> {
+/**
+ * Returns 'signed-in' when the project creates a session immediately, or
+ * 'confirm-email' when it requires confirmation first — not an error, so the
+ * caller can say so calmly rather than in red.
+ */
+export async function signUp(
+  email: string,
+  password: string,
+  displayName: string,
+): Promise<'signed-in' | 'confirm-email'> {
   const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
-    options: { data: { display_name: displayName.trim() } },
+    options: {
+      data: { display_name: displayName.trim() },
+      // Come back to this app rather than the project's default Site URL.
+      ...(Platform.OS === 'web' && typeof window !== 'undefined'
+        ? { emailRedirectTo: window.location.origin }
+        : {}),
+    },
   });
   if (error) throw new Error(error.message);
-  // Projects with email confirmation on return a user but no session.
-  if (!data.session) {
-    throw new Error('Check your email to confirm the account, then sign in.');
-  }
+  return data.session ? 'signed-in' : 'confirm-email';
 }
 
 export async function signOut(): Promise<void> {
