@@ -49,7 +49,30 @@ security-definer RPCs.
 
 `apps/guest-web/vercel.json` already carries the pnpm-workspace build commands.
 
-## 3. The host app on a real iPhone
+## 3. The host app — free on the web, or paid on the App Store
+
+**The whole product ships for $0.** Guests never install anything by design,
+and the host app exports to a static site too:
+
+```bash
+corepack pnpm --filter @addasplit/host-mobile build:web   # -> apps/host-mobile/dist
+```
+
+That is a ~1.5 MB SPA. Deploy `dist/` to Vercel, Netlify, or any static host —
+just add a rewrite sending all paths to `index.html`, or client-side routes like
+`/track/<id>` 404 on refresh. Hosts can then *Add to Home Screen* for a
+full-screen, own-icon install with no app store involved.
+
+What the web build costs you: the native Liquid Glass rendering falls back to a
+CSS blur, and there is no App Store listing.
+
+### Paid path, only when you need it
+
+The $99/yr Apple Developer Program buys App Store distribution and TestFlight —
+nothing else. Pay it when users ask for a store listing, not before; it renews
+annually, so every year paid early is wasted.
+
+## 4. Native iOS builds
 
 The host is an Expo app, so it does not go through Vercel.
 
