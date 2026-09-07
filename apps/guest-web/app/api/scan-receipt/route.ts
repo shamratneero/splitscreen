@@ -88,7 +88,9 @@ export async function POST(request: Request) {
 
   try {
     const response = await client.messages.create({
-      model: "claude-opus-5",
+      // Sonnet over Opus for cost: a receipt is a short, well-specified
+      // extraction, and the schema constrains the output either way.
+      model: "claude-sonnet-5",
       max_tokens: 8000,
       system: SYSTEM,
       // Reading a creased, angled receipt and doing the per-unit arithmetic
