@@ -20,12 +20,13 @@ This repository contains a runnable **prototype**, not a production-ready MVP.
 - PostgreSQL/Supabase schema with RLS, security-definer guest RPCs, and a
   row-locking claim path, connected to both apps and verified against a live
   database.
+- Host accounts with email sign-up and sign-in, a persisted session, saved
+  bKash/Nagad numbers, and a history of every split with what is still owed.
 - Host publishes a draft to a real split and shares a working QR; guests claim
   through it with no account; a live tracking screen shows who claimed what and
-  lets the host mark payments received.
+  lets the host mark payments received, which the guest sees without reloading.
 
-**Current limits:** the host signs in as a single seeded demo account, so real
-signup and multi-host support are still missing. Camera/OCR is not implemented,
+**Current limits:** Camera/OCR is not implemented,
 shared-item splitting exists in the schema but not the UI, and guests refresh on
 interaction rather than over realtime. Payment confirmation is host-attested;
 there is no bKash/Nagad API integration. Native JavaScript export is not an

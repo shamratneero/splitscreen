@@ -18,9 +18,12 @@ export type PublicSplit = {
   };
   items: SplitItem[];
   claims: SplitClaim[];
-  guests: (SplitGuest & { status: string })[];
+  guests: (SplitGuest & { status: string; paymentStatus: PaymentStatus })[];
   myGuestId: string | null;
+  myPaymentStatus: PaymentStatus;
 };
+
+export type PaymentStatus = "UNPAID" | "GUEST_REPORTED" | "CONFIRMED" | "FAILED" | "REFUNDED";
 
 /**
  * Reads a split by its public token. `sessionId` is optional — pass it to have

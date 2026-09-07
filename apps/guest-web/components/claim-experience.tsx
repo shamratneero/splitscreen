@@ -101,6 +101,20 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     if (fresh) setSplit(fresh);
   }, [token, sessionId]);
 
+  /**
+   * Once the guest is waiting on the host, nothing they do will refresh the
+   * page — so poll until the host confirms. Also keeps availability honest
+   * while people are still claiming.
+   */
+  useEffect(() => {
+    if (!sessionId) return;
+    if (split.myPaymentStatus === "CONFIRMED") return;
+    const timer = setInterval(() => {
+      reload().catch(() => {});
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [sessionId, split.myPaymentStatus, reload]);
+
   const myGuestId = split.myGuestId;
 
   /** How many of each item this guest currently holds, straight from the server. */
@@ -281,23 +295,29 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
       </section>
     );
 
-  if (stage === "done")
+  if (stage === "done") {
+    const confirmed = split.myPaymentStatus === "CONFIRMED";
     return (
       <section className="screen success">
-        <div className="success-mark">✓</div>
-        <p className="eyebrow">Payment reported</p>
-        <h1>You’re all set</h1>
+        <div className={`success-mark${confirmed ? " confirmed" : ""}`}>✓</div>
+        <p className="eyebrow">{confirmed ? "Payment confirmed" : "Payment reported"}</p>
+        <h1>{confirmed ? "All settled" : "You’re all set"}</h1>
         <p>
           You claimed {itemCount} {itemCount === 1 ? "item" : "items"} as {name || "a guest"}.
         </p>
         <div className="summary">
           <span>Total</span>
           <strong>{taka(myTotals.total)}</strong>
-          <p className="quiet">Waiting for host confirmation</p>
+          {confirmed ? (
+            <p className="quiet settled">{hostName} confirmed they received your money.</p>
+          ) : (
+            <p className="quiet">Waiting for {hostName} to confirm — this updates on its own.</p>
+          )}
         </div>
         <button className="secondary-button" onClick={() => setStage("claim")}>View full split</button>
       </section>
     );
+  }
 
   return (
     <section className="screen">

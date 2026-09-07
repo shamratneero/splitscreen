@@ -17,6 +17,7 @@
   "dependencies": {
     "@addasplit/split-engine": "workspace:*",
     "@expo/metro-runtime": "~6.1.2",
+    "@react-native-async-storage/async-storage": "^3.1.1",
     "@supabase/supabase-js": "^2.115.0",
     "expo": "~54.0.0",
     "expo-blur": "~15.0.8",

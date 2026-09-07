@@ -1,4 +1,4 @@
-import { ensureHostSession, supabase } from './supabase';
+import { requireHostId, supabase } from './supabase';
 import type { Draft } from '../state/draft';
 
 const toInt = (value: string) => {
@@ -14,7 +14,7 @@ const toInt = (value: string) => {
  * both covered by the "host owns …" policies.
  */
 export async function publishSplit(draft: Draft): Promise<{ id: string; publicToken: string }> {
-  const hostUserId = await ensureHostSession();
+  const hostUserId = await requireHostId();
 
   const subtotal = draft.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
   const vat = toInt(draft.vat);

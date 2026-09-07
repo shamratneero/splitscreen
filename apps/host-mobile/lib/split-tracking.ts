@@ -1,5 +1,5 @@
 import { calculateSplit, type SplitClaim } from '@addasplit/split-engine';
-import { ensureHostSession, supabase } from './supabase';
+import { requireHostId, supabase } from './supabase';
 
 export type TrackedGuest = {
   id: string;
@@ -64,7 +64,7 @@ function paymentStatusOf(payments: Row['guests'][number]['payments']): TrackedGu
 
 /** Reads one of the host's splits with everything needed to track it live. */
 export async function fetchSplitTracking(splitId: string): Promise<SplitTracking> {
-  await ensureHostSession();
+  await requireHostId();
 
   const { data, error } = await supabase
     .from('splits')
@@ -154,7 +154,7 @@ export async function fetchSplitTracking(splitId: string): Promise<SplitTracking
 
 /** Host confirms they actually received this guest's money. */
 export async function confirmPayment(guestId: string, amount: number): Promise<void> {
-  await ensureHostSession();
+  await requireHostId();
   const { error } = await supabase
     .from('payments')
     .upsert(
