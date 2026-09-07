@@ -185,6 +185,11 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     }
   }, [split, myGuestId]);
 
+  const hasUnclaimed = split.items.some(item =>
+    split.claims.filter(claim => claim.itemId === item.id).reduce((sum, claim) => sum + claim.quantity, 0) < item.quantity,
+  );
+  const estimateNote = hasUnclaimed ? <p className="quiet">Includes your share of charges. Rounding may adjust by a few taka as everyone finishes claiming.</p> : null;
+
   const itemCount = Object.values(myQuantities).reduce((sum, value) => sum + value, 0);
 
   const update = async (itemId: string, quantity: number) => {
@@ -232,7 +237,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     }
   };
 
-  const banner = error ? <p className="quiet error">{error}</p> : null;
+  const banner = error ? <p role="alert" className="quiet error">{error}</p> : null;
   const hostName = split.split.hostDisplayName?.trim() || "your host";
 
   if (stage === "confirm")
@@ -240,7 +245,8 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
       <section className="screen">
         <header className="split-header">
           <p className="eyebrow">AddaSplit</p>
-          <h1>Almost done</h1>
+          <button className="text-button back-button" onClick={() => setStage("claim")}>← Edit items</button>
+          <h1>Confirm your share</h1>
           <p>Tell your friends whose items these are.</p>
         </header>
         <label className="field">
@@ -248,15 +254,16 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
           <input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Tanvir" />
         </label>
         <div className="summary">
-          <span>You’ll pay</span>
+          <span>{hasUnclaimed ? "Your estimated share" : "You’ll pay"}</span>
           <strong>{taka(myTotals.total)}</strong>
           <dl>
             <div><dt>Items</dt><dd>{taka(myTotals.itemSubtotal)}</dd></div>
-            <div><dt>VAT</dt><dd>{taka(myTotals.vat)}</dd></div>
-            <div><dt>Service charge</dt><dd>{taka(myTotals.serviceCharge)}</dd></div>
+            {myTotals.vat > 0 ? <div><dt>VAT</dt><dd>{taka(myTotals.vat)}</dd></div> : null}
+            {myTotals.serviceCharge > 0 ? <div><dt>Service charge</dt><dd>{taka(myTotals.serviceCharge)}</dd></div> : null}
             {myTotals.discount > 0 ? <div><dt>Discount</dt><dd>−{taka(myTotals.discount)}</dd></div> : null}
           </dl>
         </div>
+        {estimateNote}
         {banner}
         <footer className="bottom-bar">
           <button className="button" disabled={!name.trim() || itemCount === 0 || busy} onClick={submitName}>
@@ -383,7 +390,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
         <p className="eyebrow">{split.split.restaurantName}</p>
         <h1>{formatSplitDate(split.split.splitDate)}</h1>
         <p>
-          Tap what you had.
+          {formatSplitDate(split.split.splitDate)} · Select your quantities.
           {others.length ? ` ${others.length} other ${others.length === 1 ? "person is" : "people are"} claiming too.` : ""}
         </p>
       </header>
@@ -392,7 +399,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
           const left = availability[item.id] ?? 0;
           const mine = myQuantities[item.id] ?? 0;
           return (
-          <article className={`claim-row${left === 0 && mine === 0 ? " taken" : ""}`} key={item.id}>
+          <article className={`claim-row${mine > 0 ? " selected" : ""}${left === 0 && mine === 0 ? " taken" : ""}`} key={item.id}>
             <div>
               <h2>{item.name}</h2>
               <p>
@@ -415,7 +422,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
       {banner}
       <footer className="bottom-bar">
         <div>
-          <span>Your share</span>
+          <span>{itemCount ? `${itemCount} ${itemCount === 1 ? "item" : "items"} selected` : "Choose your items"}</span>
           <strong>{taka(myTotals.total)}</strong>
         </div>
         <button className="button compact" disabled={itemCount === 0 || busy} onClick={() => setStage("confirm")}>

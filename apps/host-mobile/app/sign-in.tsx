@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
-import { Button, Heading, Page, Surface } from '../components/ui';
+import { Pressable, Text, TextInput, View } from 'react-native';
+import { Button, Heading, Page, Toolbar } from '../components/ui';
 import { useTheme } from '../components/theme';
 import { consumeAuthRedirectError, signIn, signUp } from '../lib/supabase';
 
@@ -10,6 +10,7 @@ export default function SignInScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -21,9 +22,10 @@ export default function SignInScreen() {
   }, []);
 
   const creating = mode === 'up';
-  const canSubmit = email.trim().length > 3 && password.length >= 6 && (!creating || name.trim().length > 0);
+  const canSubmit = email.trim().length > 3 && (creating ? password.length >= 6 : password.length > 0) && (!creating || name.trim().length > 0);
 
   const submit = async () => {
+    if (!canSubmit || busy) return;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -55,7 +57,7 @@ export default function SignInScreen() {
   };
 
   return (
-    <Page>
+    <Page header={<Toolbar />}>
       <View style={{ flex: 1, justifyContent: 'center', paddingBottom: 40 }}>
         <Heading
           centered
@@ -63,7 +65,7 @@ export default function SignInScreen() {
           subtitle={creating ? 'So your splits and payments stay in one place.' : 'Sign in to pick up where you left off.'}
         />
 
-        <Surface style={{ gap: 12, marginTop: 24 }}>
+        <View style={{ gap: 10, marginTop: 8 }}>
           {creating ? (
             <TextInput
               accessibilityLabel="Your name"
@@ -75,6 +77,7 @@ export default function SignInScreen() {
               style={input}
             />
           ) : null}
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: '600' }}>Email</Text>
           <TextInput
             accessibilityLabel="Email"
             placeholder="Email"
@@ -87,18 +90,26 @@ export default function SignInScreen() {
             onChangeText={setEmail}
             style={input}
           />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: '600' }}>Password</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} onPress={() => setShowPassword(!showPassword)} style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
+              <Text style={{ color: colors.primary, fontSize: 13 }}>{showPassword ? 'Hide' : 'Show'}</Text>
+            </Pressable>
+          </View>
           <TextInput
             accessibilityLabel="Password"
-            placeholder="Password (at least 6 characters)"
+            placeholder={creating ? "At least 6 characters" : "Your password"}
             placeholderTextColor={colors.muted}
-            secureTextEntry
+            secureTextEntry={!showPassword}
+            onSubmitEditing={submit}
+            returnKeyType="go"
             autoCapitalize="none"
             textContentType={creating ? 'newPassword' : 'password'}
             value={password}
             onChangeText={setPassword}
             style={input}
           />
-        </Surface>
+        </View>
 
         {error ? (
           <Text accessibilityLiveRegion="polite" style={{ color: colors.amber, fontSize: 13, marginTop: 14, textAlign: 'center', lineHeight: 19 }}>
@@ -113,13 +124,7 @@ export default function SignInScreen() {
         ) : null}
 
         <View style={{ marginTop: 20 }}>
-          {busy ? (
-            <View style={{ minHeight: 52, alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator color={colors.primary} />
-            </View>
-          ) : (
-            <Button title={creating ? 'Create account' : 'Sign in'} onPress={submit} disabled={!canSubmit} />
-          )}
+          <Button title={busy ? (creating ? 'Creating account…' : 'Signing in…') : (creating ? 'Create account' : 'Sign in')} onPress={submit} disabled={!canSubmit || busy} />
         </View>
 
         <Pressable
@@ -127,7 +132,10 @@ export default function SignInScreen() {
           onPress={() => {
             setMode(creating ? 'in' : 'up');
             setError(null);
+            setNotice(null);
+            setShowPassword(false);
           }}
+          disabled={busy}
           style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}
         >
           <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 14 }}>

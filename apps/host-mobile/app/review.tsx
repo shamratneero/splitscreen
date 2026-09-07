@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { calculateSplit } from '@addasplit/split-engine';
 import { Button, Heading, Page, Surface, Toolbar, taka, ui } from '../components/ui';
-import { GlassSurface } from '../components/glass-surface';
 import { Icon } from '../components/icon';
 import { useTheme } from '../components/theme';
 import { useDraft, type DraftItem } from '../state/draft';
@@ -24,8 +23,8 @@ export default function ReviewScreen() {
   const edit = (id: string, patch: Partial<DraftItem>) => update({ items: draft.items.map(item => item.id === id ? { ...item, ...patch } : item) });
   const inputStyle = { color: colors.ink, backgroundColor: colors.input, borderRadius: 10, minHeight: 44, paddingHorizontal: 12, fontSize: 15 };
 
-  return <Page header={<Toolbar onBack={() => router.back()} title="New split" />} footer={<GlassSurface style={{ padding: 10 }}><Button title="Continue" onPress={() => router.push('/share')} disabled={!result?.reconciled} /></GlassSurface>}>
-    <Heading title="Enter the bill" subtitle="A quick check, then back to your friends." />
+  return <Page header={<Toolbar onBack={() => router.back()} title="New split" />} footer={<Button title="Create split" onPress={() => router.push('/share')} disabled={!result?.reconciled} />}>
+    <Heading title="Enter the bill" subtitle="Check the items and total before sharing." />
     <Surface style={{ marginBottom: 26 }}><Text style={{ color: colors.muted, fontSize: 12, marginBottom: 8 }}>Restaurant</Text><TextInput accessibilityLabel="Restaurant name" placeholder="Restaurant name" placeholderTextColor={colors.muted} style={[inputStyle, { fontWeight: '600' }]} value={draft.restaurant} onChangeText={restaurant => update({ restaurant })} /></Surface>
     <View style={[ui.row, { marginBottom: 12 }]}><Text style={[ui.section, { color: colors.ink, marginBottom: 0 }]}>Items</Text><Text style={{ color: colors.muted, fontSize: 12 }}>Quantity × unit price</Text></View>
     <Surface style={{ padding: 0, overflow: 'hidden' }}>

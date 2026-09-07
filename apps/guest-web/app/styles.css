@@ -46,3 +46,24 @@ h1 { margin:0; font-size:28px; line-height:1.22; letter-spacing:-.7px; } .split-
   border-top:1px solid var(--line); font-size:14px; }
 .people-list .paid { color:var(--green); font-weight:600; font-size:12px; }
 .people-list .pending { color:var(--muted); font-size:12px; }
+
+/* Quiet surfaces, clear selection and generous touch targets. */
+.screen { padding-left:24px; padding-right:24px; }
+.claim-row > div:first-child { min-width:0; }
+.claim-row h2 { overflow-wrap:anywhere; }
+.stepper { flex-shrink:0; }
+.claim-row.selected .stepper { border-color:var(--green); }
+.claim-row.selected .stepper output { color:var(--green); }
+.back-button { display:block; margin:0 0 20px; }
+.text-button { min-height:44px; min-width:44px; }
+.bottom-bar > .button:only-child { width:100%; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid var(--green); outline-offset:3px; }
+.send-card { background:var(--canvas); }
+@media (max-width:370px) {
+  .screen { padding-left:16px; padding-right:16px; }
+  .claim-row { gap:8px; }
+}
+@media (prefers-color-scheme:dark) {
+  .quiet.error { color:#ffb4ab; }
+  .claim-row.selected .stepper output, .text-button { color:#7ed2a5; }
+}

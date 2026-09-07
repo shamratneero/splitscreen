@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Heading, Page, RoundButton, Surface, Toolbar, ui } from '../../components/ui';
+import { Button, Heading, Page, Toolbar, ui } from '../../components/ui';
 import { GlassSurface } from '../../components/glass-surface';
-import { ReceiptArt } from '../../components/receipt-art';
 import { Icon } from '../../components/icon';
 import { useTheme } from '../../components/theme';
 import { useDraft } from '../../state/draft';
@@ -47,12 +46,12 @@ export default function HomeScreen() {
       setScanning(false);
     }
   };
-  return <Page tabs header={<Toolbar right={<RoundButton icon="settings" label="Open profile" onPress={() => router.push('/profile')} />} />}>
+  return <Page tabs header={<Toolbar />}>
     <View style={{ flex: 1, justifyContent: 'center', paddingTop: 10, paddingBottom: 36 }}>
-      <View style={{ alignItems: 'center', marginBottom: 26 }}><ReceiptArt /></View>
-      <View style={{ alignSelf: 'center', maxWidth: 285 }}><Heading centered title="Split bills, not friendships." subtitle="Scan a receipt, let everyone claim what they ordered, and settle up." /></View>
+      <View style={{ alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 72, height: 72, borderRadius: 20, backgroundColor: colors.soft, marginBottom: 28 }}><Icon name="receipt" size={32} color={colors.primary} /></View>
+      <View style={{ alignSelf: 'center', maxWidth: 285 }}><Heading centered title="Split bills, not friendships." subtitle="Add the bill. Share a link. Everyone pays their share." /></View>
       <View style={{ gap: 10, marginTop: 12 }}><Button title="Scan receipt" icon="camera" onPress={() => setCapture(true)} /><Button title="Enter manually" secondary onPress={start} /></View>
-      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 23 }}><Icon name="people" color={colors.muted} size={16} /><Text style={{ fontSize: 12, color: colors.muted }}>Just one app. Everyone’s invited.</Text></View>
+      <Text style={{ textAlign: 'center', fontSize: 12, color: colors.muted, marginTop: 20 }}>Your friends join in their browser.</Text>
     </View>
     <Modal visible={capture} transparent animationType="slide" onRequestClose={() => setCapture(false)}>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(12,30,20,.35)' }}>

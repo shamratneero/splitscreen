@@ -51,6 +51,8 @@ export interface SplitCalculation {
   guests: GuestAllocation[];
   unclaimedItems: UnclaimedItem[];
   allocatedCharges: { vat: Taka; serviceCharge: Taka; discount: Taka };
+  /** Charges reserved for unclaimed items, or unallocatable on a zero subtotal. */
+  unallocatedCharges: { vat: Taka; serviceCharge: Taka; discount: Taka };
   roundingAdjustments: Record<string, Taka>;
   calculatedTotal: Taka;
   receiptTotal: Taka;

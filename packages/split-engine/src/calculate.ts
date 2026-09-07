@@ -12,7 +12,7 @@ function assertInteger(value: number, label: string): void {
 }
 
 /** Allocates an integer amount proportionally, retaining every remainder deterministically. */
-function prorate(amount: Taka, weights: Taka[], guests: SplitGuest[]): Taka[] {
+function prorate(amount: Taka, weights: Taka[]): Taka[] {
   if (amount === 0) return weights.map(() => 0);
   const totalWeight = weights.reduce((sum, value) => sum + value, 0);
   if (totalWeight === 0) return weights.map(() => 0);
@@ -58,7 +58,7 @@ export function calculateSplit(input: CalculateSplitInput): SplitCalculation {
       if (!guestsById.has(id)) throw new Error(`Claim refers to unknown guest ${id}`);
     });
     claimedByItem.set(item.id, (claimedByItem.get(item.id) ?? 0) + claim.quantity);
-    const shares = prorate(item.unitPrice * claim.quantity, participants.map(() => 1), participants.map((id) => guestsById.get(id)!));
+    const shares = prorate(item.unitPrice * claim.quantity, participants.map(() => 1));
     participants.forEach((id, index) => subtotals.set(id, (subtotals.get(id) ?? 0) + shares[index]!));
   }
 
@@ -69,9 +69,18 @@ export function calculateSplit(input: CalculateSplitInput): SplitCalculation {
   const itemTotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const calculatedTotal = itemTotal + vat + serviceCharge - discount;
   const weights = guests.map((guest) => subtotals.get(guest.id) ?? 0);
-  const vatAllocations = prorate(vat, weights, guests);
-  const serviceAllocations = prorate(serviceCharge, weights, guests);
-  const discountAllocations = prorate(discount, weights, guests);
+  // Keep the unclaimed subtotal in the denominator. Its charges must not be
+  // paid by the guests who happen to arrive first.
+  const unclaimedSubtotal = itemTotal - weights.reduce((sum, value) => sum + value, 0);
+  const chargeWeights = [...weights, unclaimedSubtotal];
+  const vatAllocations = prorate(vat, chargeWeights);
+  const serviceAllocations = prorate(serviceCharge, chargeWeights);
+  const discountAllocations = prorate(discount, chargeWeights);
+  const allocatedCharges = {
+    vat: vatAllocations.slice(0, guests.length).reduce((sum, value) => sum + value, 0),
+    serviceCharge: serviceAllocations.slice(0, guests.length).reduce((sum, value) => sum + value, 0),
+    discount: discountAllocations.slice(0, guests.length).reduce((sum, value) => sum + value, 0),
+  };
   const allocations: GuestAllocation[] = guests.map((guest, index) => ({
     ...guest,
     itemSubtotal: weights[index]!,
@@ -91,7 +100,12 @@ export function calculateSplit(input: CalculateSplitInput): SplitCalculation {
   return {
     guests: allocations,
     unclaimedItems,
-    allocatedCharges: { vat, serviceCharge, discount },
+    allocatedCharges,
+    unallocatedCharges: {
+      vat: vat - allocatedCharges.vat,
+      serviceCharge: serviceCharge - allocatedCharges.serviceCharge,
+      discount: discount - allocatedCharges.discount,
+    },
     roundingAdjustments,
     calculatedTotal,
     receiptTotal,
