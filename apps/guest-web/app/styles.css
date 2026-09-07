@@ -35,3 +35,14 @@ h1 { margin:0; font-size:28px; line-height:1.22; letter-spacing:-.7px; } .split-
 /* Host has confirmed the money arrived — the end state guests wait for. */
 .success-mark.confirmed { background:var(--green); color:#fff; }
 .quiet.settled { color:var(--green); font-weight:500; }
+
+/* An item nobody can take any more should recede, not compete. */
+.claim-row.taken { opacity:.45; }
+.claim-row.taken h2 { text-decoration:line-through; text-decoration-thickness:1px; }
+
+/* Who else is on this bill, and whether they have settled. */
+.people-list { list-style:none; margin:8px 0 0; padding:0; }
+.people-list li { display:flex; justify-content:space-between; align-items:center; padding:9px 0;
+  border-top:1px solid var(--line); font-size:14px; }
+.people-list .paid { color:var(--green); font-weight:600; font-size:12px; }
+.people-list .pending { color:var(--muted); font-size:12px; }

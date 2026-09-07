@@ -92,9 +92,32 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     const id = getSessionId(token);
     setSessionId(id);
     fetchPublicSplit(token, id)
-      .then((fresh) => fresh && setSplit(fresh))
+      .then((fresh) => {
+        if (!fresh) return;
+        setSplit(fresh);
+        restoreProgress(fresh);
+      })
       .catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
+    // restoreProgress is a one-shot on mount; re-running it would fight
+    // whatever the guest has navigated to since.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  /**
+   * A reload used to drop everyone back on the claim screen, so someone who had
+   * already paid was invited to claim all over again. The server knows how far
+   * they got — put them back there, and give them their name back too.
+   */
+  function restoreProgress(fresh: PublicSplit) {
+    const me = fresh.guests.find((guest) => guest.id === fresh.myGuestId);
+    if (me?.displayName) setName(me.displayName);
+
+    if (fresh.myPaymentStatus === "CONFIRMED" || fresh.myPaymentStatus === "GUEST_REPORTED") {
+      setStage("done");
+    } else if (me?.status === "CONFIRMED") {
+      setStage("pay");
+    }
+  }
 
   const reload = useCallback(async () => {
     const fresh = await fetchPublicSplit(token, sessionId);
@@ -319,19 +342,63 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     );
   }
 
+  const nothingLeft = split.items.every((item) => (availability[item.id] ?? 0) === 0);
+  const others = split.guests.filter((guest) => guest.id !== myGuestId);
+
+  // Someone arriving after the table has finished claiming needs to be told
+  // that, not handed a grid of zeroes and a dead button.
+  if (nothingLeft && itemCount === 0)
+    return (
+      <section className="screen success">
+        <div className="success-mark">✓</div>
+        <p className="eyebrow">{split.split.restaurantName}</p>
+        <h1>Everything’s claimed</h1>
+        <p>
+          The whole bill has been claimed by{" "}
+          {others.length ? `${others.length} ${others.length === 1 ? "person" : "people"}` : "someone else"}. Nothing
+          left for you to pick up.
+        </p>
+        {others.length ? (
+          <div className="summary">
+            <span>Who’s in</span>
+            <ul className="people-list">
+              {others.map((guest) => (
+                <li key={guest.id}>
+                  <span>{guest.displayName?.trim() || "Still choosing"}</span>
+                  <span className={guest.paymentStatus === "CONFIRMED" ? "paid" : "pending"}>
+                    {guest.paymentStatus === "CONFIRMED" ? "Paid" : guest.paymentStatus === "GUEST_REPORTED" ? "Sent" : "—"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        <p className="quiet">If something here is yours, ask {hostName} to adjust the bill.</p>
+      </section>
+    );
+
   return (
     <section className="screen">
       <header className="split-header">
         <p className="eyebrow">{split.split.restaurantName}</p>
         <h1>{formatSplitDate(split.split.splitDate)}</h1>
-        <p>Tap what you had.</p>
+        <p>
+          Tap what you had.
+          {others.length ? ` ${others.length} other ${others.length === 1 ? "person is" : "people are"} claiming too.` : ""}
+        </p>
       </header>
       <div className="items">
-        {split.items.map((item) => (
-          <article className="claim-row" key={item.id}>
+        {split.items.map((item) => {
+          const left = availability[item.id] ?? 0;
+          const mine = myQuantities[item.id] ?? 0;
+          return (
+          <article className={`claim-row${left === 0 && mine === 0 ? " taken" : ""}`} key={item.id}>
             <div>
               <h2>{item.name}</h2>
-              <p>{taka(item.unitPrice)} · {availability[item.id] ?? 0} available</p>
+              <p>
+                {taka(item.unitPrice)} ·{" "}
+                {left === 0 && mine === 0 ? "all claimed" : `${left} available`}
+              </p>
             </div>
             <QuantityStepper
               label={item.name}
@@ -342,7 +409,8 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
               onChange={(value) => update(item.id, value)}
             />
           </article>
-        ))}
+          );
+        })}
       </div>
       {banner}
       <footer className="bottom-bar">
