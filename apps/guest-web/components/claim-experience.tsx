@@ -52,14 +52,38 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  /** Copy with visible confirmation — a silent copy leaves people unsure it worked. */
+  /**
+   * Copy with visible confirmation — a silent copy leaves people unsure it
+   * worked. navigator.clipboard is secure-context only, so it is missing for
+   * guests on a plain-HTTP LAN address; fall back to the legacy execCommand
+   * path rather than leaving them unable to copy the payment number.
+   */
   const copyValue = async (value: string, message: string) => {
+    const legacyCopy = () => {
+      const field = document.createElement("textarea");
+      field.value = value;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.appendChild(field);
+      field.select();
+      field.setSelectionRange(0, value.length);
+      const ok = document.execCommand("copy");
+      document.body.removeChild(field);
+      return ok;
+    };
+
     try {
-      await navigator.clipboard.writeText(value);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else if (!legacyCopy()) {
+        throw new Error("copy rejected");
+      }
       setCopied(message);
       setTimeout(() => setCopied(null), 2000);
     } catch {
-      setCopied("Couldn’t copy — select the number manually.");
+      setCopied("Couldn’t copy — press and hold the number to select it.");
+      setTimeout(() => setCopied(null), 3000);
     }
   };
 
