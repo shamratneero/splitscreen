@@ -100,6 +100,7 @@ export default function SignInScreen() {
             accessibilityLabel="Password"
             placeholder={creating ? "At least 6 characters" : "Your password"}
             placeholderTextColor={colors.muted}
+            autoCorrect={false}
             secureTextEntry={!showPassword}
             onSubmitEditing={submit}
             returnKeyType="go"

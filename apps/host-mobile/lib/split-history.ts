@@ -83,6 +83,7 @@ export async function fetchSplitHistory(): Promise<SplitSummary[]> {
       })),
     );
 
+    let fullyAllocated = false;
     let totalsById = new Map<string, number>();
     try {
       const result = calculateSplit({
@@ -94,6 +95,8 @@ export async function fetchSplitHistory(): Promise<SplitSummary[]> {
         discount: row.discount,
         receiptTotal: row.receipt_total,
       });
+      fullyAllocated = result.reconciled && result.unclaimedItems.length === 0
+        && Object.values(result.unallocatedCharges).every(amount => amount === 0);
       totalsById = new Map(result.guests.map((guest) => [guest.id, guest.total]));
     } catch {
       // A malformed historical split shouldn't break the whole list.
@@ -114,7 +117,7 @@ export async function fetchSplitHistory(): Promise<SplitSummary[]> {
       owed,
       guestCount: guestRows.length,
       paidCount: paid.length,
-      settled: guestRows.length > 0 && paid.length === guestRows.length,
+      settled: fullyAllocated && guestRows.length > 0 && paid.length === guestRows.length,
     };
   });
 }

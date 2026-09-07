@@ -349,8 +349,24 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     );
   }
 
-  const nothingLeft = split.items.every((item) => (availability[item.id] ?? 0) === 0);
+  // every() is vacuously true on an empty list, which told guests of an
+  // item-less bill that someone else had claimed everything.
+  const nothingLeft =
+    split.items.length > 0 && split.items.every((item) => (availability[item.id] ?? 0) === 0);
   const others = split.guests.filter((guest) => guest.id !== myGuestId);
+
+  // A bill published with nothing on it — the host shared the link before
+  // adding items. Say so plainly instead of rendering an empty screen.
+  if (split.items.length === 0)
+    return (
+      <section className="screen">
+        <header className="split-header">
+          <p className="eyebrow">{split.split.restaurantName || "AddaSplit"}</p>
+          <h1>Nothing to claim yet</h1>
+          <p>{hostName} hasn’t added any items to this bill. Ask them to finish it, then reopen this link.</p>
+        </header>
+      </section>
+    );
 
   // Someone arriving after the table has finished claiming needs to be told
   // that, not handed a grid of zeroes and a dead button.
@@ -388,7 +404,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     <section className="screen">
       <header className="split-header">
         <p className="eyebrow">{split.split.restaurantName}</p>
-        <h1>{formatSplitDate(split.split.splitDate)}</h1>
+        <h1>What did you have?</h1>
         <p>
           {formatSplitDate(split.split.splitDate)} · Select your quantities.
           {others.length ? ` ${others.length} other ${others.length === 1 ? "person is" : "people are"} claiming too.` : ""}
@@ -404,7 +420,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
               <h2>{item.name}</h2>
               <p>
                 {taka(item.unitPrice)} ·{" "}
-                {left === 0 && mine === 0 ? "all claimed" : `${left} available`}
+                {left === 0 && mine === 0 ? "all claimed" : `${left - mine} left`}
               </p>
             </div>
             <QuantityStepper

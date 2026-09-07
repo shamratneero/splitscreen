@@ -16,7 +16,7 @@ This repository contains a runnable **prototype**, not a production-ready MVP.
 - Next.js guest demo: quantity selection, name confirmation, sample payment
   instructions, and a local payment-reported state.
 - Pure integer-taka split engine with deterministic remainder allocation and
-  11 unit tests, plus a host browser regression test.
+  16 unit tests, plus browser tests for sign-in and the host-to-guest payment flow.
 - PostgreSQL/Supabase schema with RLS, security-definer guest RPCs, and a
   row-locking claim path, connected to both apps and verified against a live
   database.
@@ -26,9 +26,9 @@ This repository contains a runnable **prototype**, not a production-ready MVP.
   through it with no account; a live tracking screen shows who claimed what and
   lets the host mark payments received, which the guest sees without reloading.
 
-**Current limits:** Camera/OCR is not implemented,
-shared-item splitting exists in the schema but not the UI, and guests refresh on
-interaction rather than over realtime. Payment confirmation is host-attested;
+**Current limits:** Camera/photo receipt scanning is implemented through a server-side
+Anthropic endpoint, but still needs live validation, endpoint authentication and rate limits.
+Shared-item splitting exists in the schema but not the UI, and host and guest updates use five-second polling. Payment confirmation is host-attested;
 there is no bKash/Nagad API integration. Native JavaScript export is not an
 Xcode compilation or a physical-device validation.
 
@@ -115,7 +115,7 @@ corepack pnpm --filter @addasplit/host-mobile build:ios:js
 corepack pnpm --filter @addasplit/host-mobile exec expo install --check
 ```
 
-Browser smoke check (starts a temporary Expo server on port 8082):
+Browser checks (start a local test backend on 54329, Expo on 8082, and Next.js on 3002):
 
 ```bash
 corepack pnpm exec playwright install chromium
@@ -128,12 +128,16 @@ Alternatively, with Google Chrome installed:
 PLAYWRIGHT_CHANNEL=chrome corepack pnpm test:host:web
 ```
 
-The test verifies rendering, manual edits, and navigation to the demo share
-screen without browser runtime errors. Screenshots are written to ignored
-`test-results/`. It does not verify native iOS rendering or backend behavior.
+The tests keep host sign-in required and exercise session persistence, bill editing,
+reconciliation, publishing, anonymous guest claiming, payment reporting, and host
+confirmation. They use an in-memory Supabase contract fixture and fake credentials;
+no live database writes or real payments occur. Screenshots are written to ignored
+`test-results/`. These checks do not validate database RLS, concurrency, native iOS,
+or the live OCR service.
 
 ## Next milestone
 
-Connect a saved host bill to its unique public link, persist an anonymous guest's
-claim and confirmation, and show the guest's amount on the host screen. See the
-[implementation plan](docs/implementation-plan.md) for the remaining work.
+Validate the complete flow against Supabase on two devices, protect the OCR endpoint,
+and complete native-device checks. Partial claims now reserve unclaimed charges;
+whole-taka rounding can still adjust a guest's preview as the table finishes claiming.
+See the [implementation plan](docs/implementation-plan.md) for remaining work.

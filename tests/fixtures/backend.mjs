@@ -11,7 +11,7 @@ let claims = [];
 
 createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'authorization, apikey, content-type, x-client-info, prefer, accept, x-supabase-api-version');
+  res.setHeader('Access-Control-Allow-Headers', 'authorization, apikey, content-type, x-client-info, prefer, accept, content-profile, accept-profile, x-supabase-api-version');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Content-Type', 'application/json');
   const send = (data, status = 200) => { res.statusCode = status; res.end(JSON.stringify(data)); };

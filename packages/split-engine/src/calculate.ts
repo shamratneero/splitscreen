@@ -3,7 +3,6 @@ import type {
   GuestAllocation,
   SplitCalculation,
   SplitClaim,
-  SplitGuest,
   Taka,
 } from "./types";
 

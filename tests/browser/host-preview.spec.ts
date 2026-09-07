@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
+test.beforeEach(async ({ context }) => {
+  await context.route('**/auth/v1/**', route => {
+    if (new URL(route.request().url()).hostname !== '127.0.0.1') return route.abort();
+    return route.continue();
+  });
+});
+
 const captureErrors = (page: Page, errors: string[]) => {
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -40,6 +47,7 @@ test('host signs in, creates a split, and confirms an anonymous guest payment', 
   await expect(page.getByRole('button', { name: 'Create split', exact: true })).toBeDisabled();
   await page.getByLabel('Receipt total').fill('220');
   await expect(page.getByText('Total matches receipt')).toBeVisible();
+  await page.getByRole('heading', { name: 'Enter the bill' }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('host-review.png'), fullPage: true });
   await page.getByRole('button', { name: 'Create split', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Copy guest link' })).toBeEnabled();
@@ -50,7 +58,11 @@ test('host signs in, creates a split, and confirms an anonymous guest payment', 
     const guest = await guestContext.newPage();
     captureErrors(guest, errors);
     await guest.goto('http://127.0.0.1:3002/s/test-public-token');
+    const claimResponse = guest.waitForResponse(response => response.url().includes('/rpc/set_claim'), { timeout: 10_000 });
     await guest.getByRole('button', { name: 'Add Beef Biryani', exact: true }).click();
+    expect((await claimResponse).ok()).toBe(true);
+    await expect(guest.locator('.quiet.error')).toHaveCount(0);
+    expect(errors).toEqual([]);
     // Half the items means half the VAT, even though the other half is unclaimed.
     await expect(guest.locator('.bottom-bar strong')).toHaveText('৳110');
     await guest.screenshot({ path: testInfo.outputPath('guest-claim.png'), fullPage: true });
@@ -73,6 +85,9 @@ test('host signs in, creates a split, and confirms an anonymous guest payment', 
     await expect(guest.getByRole('heading', { name: 'All settled' })).toBeVisible({ timeout: 12_000 });
     await page.screenshot({ path: testInfo.outputPath('host-tracking.png'), fullPage: true });
     expect(await guest.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.goto('/splits');
+    await expect(page.getByText('Open', { exact: true })).toBeVisible();
+    await expect(page.getByText('Settled', { exact: true })).toHaveCount(0);
     expect(errors).toEqual([]);
   } finally {
     await guestContext.close();
