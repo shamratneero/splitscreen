@@ -31,9 +31,11 @@ The guest app is a normal Next.js app, so Vercel hosts it on the free tier.
 2. At [vercel.com/new](https://vercel.com/new), import the repository.
 3. **Set Root Directory to `apps/guest-web`.** This is the only non-obvious
    step — without it Vercel builds the monorepo root and fails.
-4. Add two Environment Variables, matching `apps/guest-web/.env.local`:
+4. Add these Environment Variables, matching `apps/guest-web/.env.local`:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `ANTHROPIC_API_KEY` — **secret**, powers `/api/scan-receipt`. Never give it
+     a `NEXT_PUBLIC_` prefix; that ships your key to every visitor's browser.
 5. Deploy. You get something like `https://addasplit.vercel.app`.
 
 Then point the host app at it and restart Expo:
