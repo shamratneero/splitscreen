@@ -13,14 +13,34 @@ import {
 } from "@/lib/split-repository";
 
 type Stage = "claim" | "confirm" | "pay" | "done";
-const taka = (value: number) => `৳${value.toLocaleString("en-BD")}`;
+/**
+ * Grouped by hand for the same reason as the date: prices render on the server
+ * and again in the guest's browser, and toLocaleString("en-BD") is not
+ * guaranteed to group identically in both (lakh vs thousand separators), which
+ * fails hydration.
+ */
+const taka = (value: number) => {
+  const sign = value < 0 ? "-" : "";
+  const digits = String(Math.abs(Math.round(value)));
+  return `${sign}৳${digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+};
 
-/** "2026-09-07" reads as a database field; guests should see "7 Sep". */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * "2026-09-07" reads as a database field; guests should see "7 Sep".
+ *
+ * Formatted by hand rather than with toLocaleDateString: this renders on the
+ * server and again on the guest's phone, and the two ICU implementations
+ * disagree ("Sep" vs "Sept"), which fails hydration. Parsed off the string so
+ * the host's timezone can't shift the day either.
+ */
 const formatSplitDate = (value: string) => {
-  const parsed = new Date(`${value}T00:00:00`);
-  return Number.isNaN(parsed.getTime())
-    ? value
-    : parsed.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return value;
+  const [, , month, day] = match;
+  const name = MONTHS[Number(month) - 1];
+  return name ? `${Number(day)} ${name}` : value;
 };
 
 export function ClaimExperience({ token, initialSplit }: { token: string; initialSplit: PublicSplit }) {
