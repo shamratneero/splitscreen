@@ -1,5 +1,5 @@
 {
-  "name": "@splitpay/host-mobile",
+  "name": "@splitsave/host-mobile",
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
@@ -16,7 +16,7 @@
     "prepare:ocr": "node scripts/prepare-ocr.mjs"
   },
   "dependencies": {
-    "@splitpay/split-engine": "workspace:*",
+    "@splitsave/split-engine": "workspace:*",
     "@expo/metro-runtime": "~6.1.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@supabase/supabase-js": "^2.115.0",
@@ -40,8 +40,8 @@
     "react-native-svg": "15.12.1",
     "react-native-web": "~0.21.0",
     "tesseract.js": "^7.0.0",
-    "@splitpay/receipt-parser": "workspace:*",
-    "@splitpay/types": "workspace:*"
+    "@splitsave/receipt-parser": "workspace:*",
+    "@splitsave/types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",

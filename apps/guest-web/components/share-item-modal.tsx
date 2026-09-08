@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatMoney } from "@splitpay/types";
+import { formatMoney } from "@splitsave/types";
 
 export type Sharer = { id: string; displayName: string };
 

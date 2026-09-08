@@ -1,6 +1,6 @@
 {
-  "name": "SplitPay",
-  "short_name": "SplitPay",
+  "name": "SplitSave",
+  "short_name": "SplitSave",
   "description": "Good food. Fair splits.",
   "start_url": "/",
   "scope": "/",

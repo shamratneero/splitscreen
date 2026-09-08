@@ -1,10 +1,10 @@
-const STORAGE_KEY = "splitpay.session";
+const STORAGE_KEY = "splitsave.session";
 /**
- * The app was called AddaSplit until the rename. A guest who claimed items
- * under the old key would otherwise come back as a stranger and lose them, so
- * adopt the old id when it is the only one present.
+ * The app shipped as AddaSplit and then briefly as SplitPay. A guest who
+ * claimed items under either name would otherwise come back as a stranger and
+ * lose them, so adopt an older id when no current one exists. Newest first.
  */
-const LEGACY_STORAGE_KEY = "addasplit.session";
+const LEGACY_STORAGE_KEYS = ["splitpay.session", "addasplit.session"];
 
 /**
  * A RFC 4122 v4 UUID, without assuming a secure context.
@@ -47,10 +47,12 @@ export function getSessionId(token: string): string {
     const existing = window.localStorage.getItem(key);
     if (existing) return existing;
 
-    const legacy = window.localStorage.getItem(`${LEGACY_STORAGE_KEY}.${token}`);
-    if (legacy) {
-      window.localStorage.setItem(key, legacy);
-      return legacy;
+    for (const previous of LEGACY_STORAGE_KEYS) {
+      const legacy = window.localStorage.getItem(`${previous}.${token}`);
+      if (legacy) {
+        window.localStorage.setItem(key, legacy);
+        return legacy;
+      }
     }
 
     const created = createUUID();

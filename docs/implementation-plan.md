@@ -1,4 +1,4 @@
-# SplitPay implementation plan
+# SplitSave implementation plan
 
 ## Implemented
 

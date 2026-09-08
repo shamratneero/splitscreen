@@ -1,7 +1,7 @@
-import { parseReceipt, type ParsedReceipt } from '@splitpay/receipt-parser';
+import { parseReceipt, type ParsedReceipt } from '@splitsave/receipt-parser';
 import type { Worker } from 'tesseract.js';
 export type { CaptureSource } from './capture-receipt';
-export type { ParsedReceipt as ScannedReceipt } from '@splitpay/receipt-parser';
+export type { ParsedReceipt as ScannedReceipt } from '@splitsave/receipt-parser';
 import type { CaptureSource } from './capture-receipt';
 
 declare global { interface Window { Tesseract?: typeof import('tesseract.js') } }

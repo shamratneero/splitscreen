@@ -5,7 +5,7 @@
 
 -- Confirmed-received amounts are host-entered (see report_guest_payment /
 -- host tracking); "amount due" is always computed live by the shared
--- @splitpay/split-engine over real items+claims, never duplicated in SQL.
+-- @splitsave/split-engine over real items+claims, never duplicated in SQL.
 alter table public.payments alter column amount drop not null;
 alter table public.payments drop constraint payments_amount_check;
 alter table public.payments add constraint payments_amount_check check (amount is null or amount >= 0);

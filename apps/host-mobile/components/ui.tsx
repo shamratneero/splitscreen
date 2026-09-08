@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { GlassSurface } from './glass-surface';
 import { Icon, type IconName } from './icon';
 import { useTheme } from './theme';
-import { DEFAULT_CURRENCY, formatMoney } from '@splitpay/types';
+import { DEFAULT_CURRENCY, formatMoney } from '@splitsave/types';
 
 /**
  * Formats an integer minor-unit amount in the given currency, defaulting to the
@@ -48,7 +48,7 @@ export function Surface({ children, style }: PropsWithChildren<{ style?: StylePr
 }
 export function Toolbar({ title, onBack, right }: { title?: string; onBack?: () => void; right?: ReactNode }) {
   const { colors } = useTheme();
-  return <View style={ui.toolbar}>{onBack ? <RoundButton icon="back" label="Go back" onPress={onBack} /> : <Text style={[ui.wordmark, { color: colors.ink }]}>SplitPay<Text style={{ color: colors.primary }}>.</Text></Text>}{title && <Text style={{ fontSize: 14, fontWeight: '600', color: colors.muted }}>{title}</Text>}{right ?? <View style={{ width: 44 }} />}</View>;
+  return <View style={ui.toolbar}>{onBack ? <RoundButton icon="back" label="Go back" onPress={onBack} /> : <Text style={[ui.wordmark, { color: colors.ink }]}>SplitSave<Text style={{ color: colors.primary }}>.</Text></Text>}{title && <Text style={{ fontSize: 14, fontWeight: '600', color: colors.muted }}>{title}</Text>}{right ?? <View style={{ width: 44 }} />}</View>;
 }
 export const ui = StyleSheet.create({
   viewport: { flex: 1, alignItems: 'center' }, page: { flex: 1, width: '100%', maxWidth: 480 },

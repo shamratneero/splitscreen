@@ -8,7 +8,7 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 
 if (!isSupabaseConfigured && process.env.NODE_ENV !== "production") {
   console.warn(
-    "[splitpay] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY are unset — the guest flow will show a setup notice.",
+    "[splitsave] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY are unset — the guest flow will show a setup notice.",
   );
 }
 

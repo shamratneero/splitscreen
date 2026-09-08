@@ -14,10 +14,10 @@ importers:
 
   apps/guest-web:
     dependencies:
-      '@splitpay/split-engine':
+      '@splitsave/split-engine':
         specifier: workspace:*
         version: link:../../packages/split-engine
-      '@splitpay/types':
+      '@splitsave/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@supabase/supabase-js':
@@ -54,13 +54,13 @@ importers:
       '@react-native-async-storage/async-storage':
         specifier: ^2.2.0
         version: 2.2.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))
-      '@splitpay/receipt-parser':
+      '@splitsave/receipt-parser':
         specifier: workspace:*
         version: link:../../packages/receipt-parser
-      '@splitpay/split-engine':
+      '@splitsave/split-engine':
         specifier: workspace:*
         version: link:../../packages/split-engine
-      '@splitpay/types':
+      '@splitsave/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@supabase/supabase-js':

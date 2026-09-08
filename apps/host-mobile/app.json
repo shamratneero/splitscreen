@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "SplitPay",
-    "slug": "splitpay",
-    "scheme": "splitpay",
+    "name": "SplitSave",
+    "slug": "splitsave",
+    "scheme": "splitsave",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
