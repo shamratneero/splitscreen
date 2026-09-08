@@ -44,7 +44,7 @@ export default function ProfileScreen() {
 
   return (
     <Page tabs header={<Toolbar />}>
-      <Heading title="Make it yours" subtitle="Small preferences. A familiar feeling." />
+      <Heading title="Your account" subtitle="Payment details and a few personal preferences." />
 
       <Text style={[ui.section, { color: colors.ink, marginBottom: 8 }]}>Host account</Text>
       <Surface style={{ gap: 4 }}>

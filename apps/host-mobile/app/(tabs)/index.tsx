@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Button, Heading, Page, Toolbar, taka, ui } from '../../components/ui';
+import { Button, Page, Surface, Toolbar, editorialFont, taka, ui } from '../../components/ui';
 import { GlassSurface } from '../../components/glass-surface';
 import { Icon } from '../../components/icon';
 import { useTheme } from '../../components/theme';
@@ -78,66 +78,70 @@ export default function HomeScreen() {
   const hasHistory = (splits ?? []).length > 0;
 
   return <Page tabs header={<Toolbar />}>
-    <ScrollView contentContainerStyle={hasHistory ? { paddingBottom: 28 } : { flexGrow: 1, justifyContent: 'center', paddingBottom: 36 }}>
-      {owed > 0 ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`You are owed ${taka(owed, currency)} across ${openSplits.length} open splits`}
-          onPress={() => router.push('/splits')}
-          style={{ backgroundColor: colors.soft, borderRadius: 20, padding: 18, marginBottom: 22 }}
-        >
-          <View style={ui.row}>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '600' }}>You’re owed</Text>
-              <Text style={{ color: colors.ink, fontSize: 30, fontWeight: '700', letterSpacing: -0.6 }}>{taka(owed, currency)}</Text>
-              <Text style={{ color: colors.muted, fontSize: 12 }}>
-                across {openSplits.length} open {openSplits.length === 1 ? 'split' : 'splits'}
-              </Text>
-            </View>
-            <Icon name="arrow" size={18} color={colors.primary} />
-          </View>
-        </Pressable>
-      ) : null}
+    <View style={{ paddingBottom: 24 }}>
+      <View style={{ marginBottom: 28 }}>
+        <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 10 }}>YOUR TABLE, SORTED</Text>
+        <Text accessibilityRole="header" style={{ fontFamily: editorialFont, fontSize: hasHistory ? 36 : 40, lineHeight: hasHistory ? 43 : 46, letterSpacing: -1.3, color: colors.ink }}>
+          {hasHistory ? `Hey, ${profile?.displayName?.trim().split(' ')[0] || 'there'}.` : 'Split bills,\nnot friendships.'}
+        </Text>
+        <Text style={{ color: colors.muted, fontSize: 15, lineHeight: 23, marginTop: 12, maxWidth: 340 }}>
+          {hasHistory ? 'Here’s where your table stands.' : 'Good company. One receipt. Everyone takes care of their share.'}
+        </Text>
+      </View>
 
-      {!hasHistory ? (
-        <>
-          <View style={{ alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 72, height: 72, borderRadius: 20, backgroundColor: colors.soft, marginBottom: 28 }}><Icon name="receipt" size={32} color={colors.primary} /></View>
-          <View style={{ alignSelf: 'center', maxWidth: 285 }}><Heading centered title="Split bills, not friendships." subtitle="Add the bill. Share a link. Everyone pays their share." /></View>
-        </>
-      ) : null}
-
-      <View style={{ gap: 10, marginTop: 12 }}><Button title="Scan receipt" icon="camera" onPress={() => setCapture(true)} /><Button title="Enter manually" secondary onPress={start} /></View>
-
-      {hasHistory ? (
-        <View style={{ marginTop: 28 }}>
-          <Text style={[ui.section, { color: colors.ink, marginBottom: 8 }]}>Recent</Text>
-          {(splits ?? []).slice(0, 4).map(split => (
-            <Pressable
-              key={split.id}
-              accessibilityRole="button"
-              accessibilityLabel={`${split.restaurantName}, ${split.paidCount} of ${split.guestCount} paid`}
-              onPress={() => router.push(`/track/${split.id}`)}
-              style={[ui.row, { paddingVertical: 13, gap: 12, borderTopWidth: 1, borderColor: colors.line }]}
-            >
-              <View style={{ flex: 1, gap: 3 }}>
-                <Text style={{ color: colors.ink, fontWeight: '600', fontSize: 15 }}>{split.restaurantName}</Text>
-                <Text style={{ color: colors.muted, fontSize: 12 }}>
-                  {split.guestCount ? `${split.paidCount}/${split.guestCount} paid` : 'no claims yet'}
-                </Text>
-              </View>
-              <Text style={{ color: split.settled ? colors.primary : colors.ink, fontWeight: '600' }}>
-                {taka(split.receiptTotal, currency)}
-              </Text>
-            </Pressable>
-          ))}
+      {hasHistory ? <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`You are owed ${taka(owed, currency)} across ${openSplits.length} open splits`}
+        onPress={() => router.push('/splits')}
+        style={{ backgroundColor: '#245C45', borderRadius: 18, padding: 24, marginBottom: 24 }}>
+        <View style={ui.row}>
+          <Text style={{ color: '#D6E6D8', fontSize: 13 }}>Still to come in</Text>
+          <Icon name="arrow" size={18} color="#D6E6D8" />
         </View>
-      ) : (
-        <Text style={{ textAlign: 'center', fontSize: 12, color: colors.muted, marginTop: 20 }}>Your friends join in their browser.</Text>
-      )}
-    </ScrollView>
+        <Text style={{ color: '#FFFFFF', fontSize: 42, lineHeight: 54, letterSpacing: -1.6, fontWeight: '500', marginTop: 8, fontVariant: ['tabular-nums'] }}>{taka(owed, currency)}</Text>
+        <View style={{ borderTopWidth: 1, borderColor: '#527A62', paddingTop: 14, marginTop: 16 }}><Text style={{ color: '#D6E6D8', fontSize: 12 }}>{openSplits.length ? `${openSplits.length} open ${openSplits.length === 1 ? 'split' : 'splits'} · View your bills` : 'Everything collected. Nice and tidy.'}</Text></View>
+      </Pressable> : null}
+
+      <Surface style={{ gap: 14 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 2 }}>
+          <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.soft, alignItems: 'center', justifyContent: 'center' }}><Icon name="receipt" size={23} color={colors.primary} /></View>
+          <View style={{ flex: 1, gap: 3 }}><Text style={{ color: colors.ink, fontSize: 16, fontWeight: '600' }}>Start a new split</Text><Text style={{ color: colors.muted, fontSize: 12 }}>A photo of the bill is all you need.</Text></View>
+        </View>
+        <Button title="Scan receipt" icon="camera" onPress={() => setCapture(true)} />
+        <Button title="Enter manually" secondary onPress={start} />
+      </Surface>
+
+      {hasHistory ? <View style={{ marginTop: 28 }}>
+        <View style={[ui.row, { marginBottom: 8 }]}>
+          <Text style={[ui.section, { color: colors.ink, marginBottom: 0 }]}>Recent splits</Text>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/splits')} style={{ minHeight: 44, justifyContent: 'center', paddingLeft: 12 }}><Text style={{ color: colors.primary, fontSize: 13, fontWeight: '600' }}>View all</Text></Pressable>
+        </View>
+        {(splits ?? []).slice(0, 4).map(split => <Pressable key={split.id} accessibilityRole="button"
+          accessibilityLabel={`${split.restaurantName}, ${split.paidCount} of ${split.guestCount} paid`}
+          onPress={() => router.push(`/track/${split.id}`)}
+          style={[ui.row, { paddingVertical: 17, borderTopWidth: 1, borderColor: colors.line }]}>
+          <View style={{ width: 38, height: 42, borderWidth: 1, borderColor: colors.line, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}><Icon name="receipt" color={colors.muted} size={19} /></View>
+          <View style={{ flex: 1, gap: 5 }}>
+            <Text style={{ color: colors.ink, fontWeight: '600', fontSize: 15 }}>{split.restaurantName}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12 }}>{split.guestCount ? `${split.paidCount} of ${split.guestCount} paid` : 'Waiting for the first claim'}</Text>
+          </View>
+          <Text style={{ color: split.settled ? colors.primary : colors.ink, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{taka(split.receiptTotal, currency)}</Text>
+        </Pressable>)}
+      </View> : <View style={{ marginTop: 30 }}>
+        <Text style={{ color: colors.muted, fontSize: 11, letterSpacing: 1.5, marginBottom: 18 }}>FROM BILL TO ALL SETTLED</Text>
+        {[
+          { title: 'Add the bill', detail: 'Scan a receipt or enter the items.' },
+          { title: 'Invite the table', detail: 'Friends choose their items from your link.' },
+          { title: 'See it settle', detail: 'Keep track as everyone pays you back.' },
+        ].map((step, index) => <View key={step.title} style={{ flexDirection: 'row', gap: 16, paddingBottom: 20 }}>
+          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600', paddingTop: 2, fontVariant: ['tabular-nums'] }}>0{index + 1}</Text>
+          <View style={{ flex: 1, gap: 4 }}><Text style={{ color: colors.ink, fontWeight: '500', fontSize: 14 }}>{step.title}</Text><Text style={{ color: colors.muted, fontSize: 12, lineHeight: 19 }}>{step.detail}</Text></View>
+        </View>)}
+      </View>}
+    </View>
     <Modal visible={capture} transparent animationType="slide" onRequestClose={() => { scanController.current?.abort(); setCapture(false); }}>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(12,30,20,.35)' }}>
-        <GlassSurface accessibilityViewIsModal style={{ padding: 28, paddingBottom: 40, gap: 16, maxWidth: 480, width: '100%', alignSelf: 'center' }}>
+        <GlassSurface accessibilityViewIsModal style={{ padding: 28, paddingBottom: 40, gap: 16, maxWidth: 560, width: '100%', alignSelf: 'center' }}>
           <View style={ui.row}><Text style={[ui.section, { color: colors.ink }]}>Scan a receipt</Text><Pressable accessibilityRole="button" onPress={() => { scanController.current?.abort(); setCapture(false); setScanError(null); }} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: colors.primary }}>{scanning ? 'Cancel' : 'Dismiss'}</Text></Pressable></View>
           {scanning ? (
             <View style={{ paddingVertical: 22, alignItems: 'center', gap: 12 }}>

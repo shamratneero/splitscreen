@@ -227,3 +227,17 @@ export function recordedReferences(tracking: SplitTracking): string[] {
     .map(guest => guest.paymentReference)
     .filter((reference): reference is string => Boolean(reference));
 }
+
+/**
+ * Removes a split and everything under it.
+ *
+ * Items, guests, claims and payments all cascade from the split row, and RLS
+ * already restricts deletion to the host who owns it, so this is a single
+ * delete rather than a cleanup sequence. Guest links stop resolving
+ * immediately, which is the point — a mistyped bill should not stay shareable.
+ */
+export async function deleteSplit(splitId: string): Promise<void> {
+  await requireHostId();
+  const { error } = await supabase.from('splits').delete().eq('id', splitId);
+  if (error) throw new Error(error.message);
+}

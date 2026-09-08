@@ -57,7 +57,7 @@ createServer(async (req, res) => {
     if (!split || body.p_token !== split.public_token) return send(null);
     let guest = guests.find(guest => guest.sessionId === body.p_session_id);
     if (rpc === 'get_public_split') return send({
-      split: { id: split.id, restaurantName: split.restaurant_name, splitDate: split.split_date,
+      split: { id: split.id, restaurantName: split.restaurant_name, splitDate: split.split_date, currency: split.currency ?? 'BDT',
         status: split.status, vat: split.vat, serviceCharge: split.service_charge, discount: split.discount,
         receiptTotal: split.receipt_total, hostDisplayName: profile.display_name, hostBkash: profile.bkash_number, hostNagad: null },
       items: split.items.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, unitPrice: item.unit_price })),

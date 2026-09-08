@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   distDir: process.env.ADDASPLIT_BROWSER_TEST === "1" ? ".next-test" : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   transpilePackages: ["@splitsave/split-engine", "@splitsave/types"],
   typedRoutes: true,
+  devIndicators: false,
 };
 
 export default nextConfig;

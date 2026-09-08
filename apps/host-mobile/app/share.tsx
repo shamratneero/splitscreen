@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, Platform, Pressable, Share, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Button, Heading, Page, Surface, Toolbar, ui } from '../components/ui';
-import { GlassSurface } from '../components/glass-surface';
 import { Icon } from '../components/icon';
 import { useTheme } from '../components/theme';
 import { useDraft } from '../state/draft';
@@ -72,10 +71,12 @@ export default function ShareScreen() {
       }
     >
       <View style={{ paddingTop: 16 }}>
-        <Heading centered title="Share with your friends" subtitle="They don’t need the app. Just a seat at your table." />
+        <Heading centered title="Bring everyone in." subtitle="One QR code for the whole table. Friends choose their items in their browser." />
       </View>
 
-      <GlassSurface style={{ padding: 24, alignSelf: 'center', marginVertical: 16, borderRadius: 30 }}>
+      <Surface style={{ padding: 24, alignSelf: 'center', marginVertical: 12, borderRadius: 18, width: '100%', maxWidth: 340, alignItems: 'center' }}>
+        <Text style={{ color: colors.muted, fontSize: 10, letterSpacing: 1.5, marginBottom: 8 }}>YOU’RE INVITED TO SPLIT</Text>
+        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: '600', textAlign: 'center', marginBottom: 14 }}>{draft.restaurant || 'The table’s bill'}</Text>
         <View style={{ padding: 16, borderRadius: 14, backgroundColor: '#FFFFFF', minWidth: 222, minHeight: 222, alignItems: 'center', justifyContent: 'center' }}>
           {token ? (
             <QRCode value={url} size={190} color="#173A2A" backgroundColor="#FFFFFF" />
@@ -85,7 +86,8 @@ export default function ShareScreen() {
             <ActivityIndicator color="#173A2A" />
           )}
         </View>
-      </GlassSurface>
+        <View style={{ borderTopWidth: 1, borderStyle: 'dashed', borderColor: colors.line, alignSelf: 'stretch', paddingTop: 16, marginTop: 12 }}><Text style={{ textAlign: 'center', color: colors.muted, fontSize: 12 }}>Scan. Choose. Settle up.</Text></View>
+      </Surface>
 
       {error ? (
         <Surface style={{ padding: 14 }}>

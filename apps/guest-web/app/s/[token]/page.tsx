@@ -1,3 +1,4 @@
+import { GuestNotice } from "@/components/guest-notice";
 import { ClaimExperience } from "@/components/claim-experience";
 import { fetchPublicSplit } from "@/lib/split-repository";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -9,20 +10,7 @@ export default async function PublicSplitPage({ params }: { params: Promise<{ to
   const { token } = await params;
 
   if (!isSupabaseConfigured) {
-    return (
-      <main className="app-shell">
-        <section className="screen">
-          <header className="split-header">
-            <p className="eyebrow">SplitSave</p>
-            <h1>Backend not configured</h1>
-            <p>
-              Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{" "}
-              <code>apps/guest-web/.env.local</code>, then restart the dev server.
-            </p>
-          </header>
-        </section>
-      </main>
-    );
+    return <GuestNotice title="The table isn’t ready yet" description="We couldn’t connect to this bill. Please try again in a moment." retryHref={`/s/${encodeURIComponent(token)}`} />;
   }
 
   let split = null;
@@ -34,31 +22,11 @@ export default async function PublicSplitPage({ params }: { params: Promise<{ to
   }
 
   if (loadError) {
-    return (
-      <main className="app-shell">
-        <section className="screen">
-          <header className="split-header">
-            <p className="eyebrow">SplitSave</p>
-            <h1>Couldn’t load this split</h1>
-            <p>{loadError}</p>
-          </header>
-        </section>
-      </main>
-    );
+    return <GuestNotice title="Couldn’t load this split" description="Check your connection and give it another try. Your saved choices will still be here." retryHref={`/s/${encodeURIComponent(token)}`} />;
   }
 
   if (!split) {
-    return (
-      <main className="app-shell">
-        <section className="screen">
-          <header className="split-header">
-            <p className="eyebrow">SplitSave</p>
-            <h1>This link isn’t active</h1>
-            <p>Ask the host to share the bill again.</p>
-          </header>
-        </section>
-      </main>
-    );
+    return <GuestNotice title="This link isn’t active" description="Ask the host to share the bill again, then open their new link or scan the QR code." />;
   }
 
   return (

@@ -1,6 +1,23 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+
+// This HTTP fixture does not implement Supabase Realtime. Reject channel joins
+// through the protocol so the app exercises its polling fallback, without a
+// network-level WebSocket error obscuring actual UI errors.
+async function usePollingFixture(context: BrowserContext) {
+  await context.routeWebSocket('ws://127.0.0.1:54329/realtime/v1/websocket*', socket => {
+    socket.onMessage(raw => {
+      const message = JSON.parse(String(raw));
+      if (!['phx_join', 'phx_leave', 'heartbeat'].includes(message.event)) return;
+      socket.send(JSON.stringify({ ...message, event: 'phx_reply', payload: {
+        status: message.event === 'phx_join' ? 'error' : 'ok',
+        response: message.event === 'phx_join' ? { reason: 'Fixture uses polling' } : {},
+      } }));
+    });
+  });
+}
 
 test.beforeEach(async ({ context }) => {
+  await usePollingFixture(context);
   await context.route('**/auth/v1/**', route => {
     if (new URL(route.request().url()).hostname !== '127.0.0.1') return route.abort();
     return route.continue();
@@ -35,13 +52,14 @@ test('host signs in, creates a split, and confirms an anonymous guest payment', 
   const loginRequest = page.waitForRequest(request => request.url().includes('/auth/v1/token'));
   await page.getByLabel('Password', { exact: true }).press('Enter');
   expect(new URL((await loginRequest).url()).origin).toBe('http://127.0.0.1:54329');
-  await expect(page.getByText('Split bills, not friendships.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Split bills,\s+not friendships\./ })).toBeVisible();
   await page.reload();
-  await expect(page.getByText('Split bills, not friendships.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Split bills,\s+not friendships\./ })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('host-home.png'), fullPage: true });
   await page.getByRole('button', { name: 'Enter manually', exact: true }).click();
   await page.getByLabel('Restaurant name').fill('Test Kitchen');
   await page.getByLabel('Item 1 name', { exact: true }).fill('Beef Biryani');
+  await page.getByLabel('Item 1 quantity', { exact: true }).fill('2');
   await page.getByLabel('Item 1 unit price').fill('100');
   await page.getByLabel('VAT', { exact: true }).fill('20');
   await expect(page.getByRole('button', { name: 'Create split', exact: true })).toBeDisabled();
@@ -54,6 +72,7 @@ test('host signs in, creates a split, and confirms an anonymous guest payment', 
   await expect(page.getByRole('button', { name: 'Track claims', exact: true })).toBeVisible();
 
   const guestContext = await browser.newContext({ viewport: { width: 360, height: 800 } });
+  await usePollingFixture(guestContext);
   try {
     const guest = await guestContext.newPage();
     captureErrors(guest, errors);
@@ -69,12 +88,15 @@ test('host signs in, creates a split, and confirms an anonymous guest payment', 
     await expect(guest.locator('.bottom-bar strong')).toHaveText('৳110');
     await guest.screenshot({ path: testInfo.outputPath('guest-claim.png'), fullPage: true });
     await guest.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(guest.getByRole('heading', { name: 'Confirm your share' })).toBeFocused();
+    await guest.screenshot({ path: testInfo.outputPath('guest-review.png'), fullPage: true });
     await guest.getByRole('button', { name: 'Edit items' }).click();
     await expect(guest.locator('.stepper output')).toHaveText('1');
     await guest.getByRole('button', { name: 'Continue', exact: true }).click();
     await guest.getByLabel('Your name').fill('Asha');
     await guest.getByRole('button', { name: 'Confirm ৳110' }).click();
     await expect(guest.getByText('01700000000', { exact: true })).toBeVisible();
+    await guest.screenshot({ path: testInfo.outputPath('guest-pay.png'), fullPage: true });
     await guest.getByRole('button', { name: 'I’ve sent it' }).click();
     await expect(guest.getByText('Payment reported', { exact: true })).toBeVisible();
     await guest.reload();
@@ -100,7 +122,7 @@ test('host signs in, creates a split, and confirms an anonymous guest payment', 
 test('invalid guest links show a styled recovery message', async ({ page }) => {
   await page.goto('http://127.0.0.1:3002/s/demo-sultans-dine');
   await expect(page.getByRole('heading', { name: 'This link isn’t active' })).toBeVisible();
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(248, 249, 247)');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(239, 238, 232)');
 });
 
 test('receipt photo is read locally and must be reviewed before sharing', async ({ page }, testInfo) => {
@@ -147,6 +169,77 @@ test('receipt photo is read locally and must be reviewed before sharing', async 
     'Warning: Parameter not found: segsearch_max_futile_classifications',
     'Warning: Parameter not found: classify_misfit_junk_penalty',
   ]);
-  expect(errors.filter(error => !knownModelNotices.has(error))).toEqual([]);
+  expect(errors.filter(error => !knownModelNotices.has(error) && !/^Estimating resolution as \d+$/.test(error))).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath('receipt-ocr-review.png'), fullPage: true });
+});
+
+const fixtureBase = 'http://127.0.0.1:54329';
+const publicToken = '00000000-0000-4000-8000-000000000002';
+
+test('layouts fit narrow phones and desktops, and sharing supports keyboard recovery', async ({ page, request }, testInfo) => {
+  await request.post(`${fixtureBase}/reset`);
+  await request.post(`${fixtureBase}/rest/v1/splits`, { data: { restaurant_name: 'The Long Table · Dhanmondi', currency: 'BDT', status: 'OPEN', vat: 40, service_charge: 0, discount: 0, receipt_total: 440 } });
+  await request.post(`${fixtureBase}/rest/v1/items`, { data: [{ name: 'Chicken biryani with extra seasonal vegetables', quantity: 4, unit_price: 100 }] });
+  await request.post(`${fixtureBase}/rest/v1/rpc/set_claim`, { data: { p_token: publicToken, p_session_id: 'another-guest', p_item_id: 'item-0', p_quantity: 1 } });
+  await request.post(`${fixtureBase}/rest/v1/rpc/confirm_guest_details`, { data: { p_token: publicToken, p_session_id: 'another-guest', p_display_name: 'Asha' } });
+  const errors: string[] = [];
+  captureErrors(page, errors);
+  for (const [width, height, colorScheme] of [[320, 740, 'light'], [1440, 1000, 'light'], [390, 844, 'dark']] as const) {
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+    await page.goto('/sign-in');
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`sign-in-${width}-${colorScheme}.png`), fullPage: true });
+    await page.goto(`http://127.0.0.1:3002/s/${publicToken}`);
+    await expect(page.getByRole('button', { name: 'Add Chicken biryani with extra seasonal vegetables' })).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeInViewport();
+    await page.screenshot({ path: testInfo.outputPath(`guest-${width}-${colorScheme}.png`), fullPage: true });
+  }
+  await page.getByRole('button', { name: 'Add Chicken biryani with extra seasonal vegetables' }).click();
+  const share = page.getByRole('button', { name: 'Share', exact: true });
+  await expect(share).toBeEnabled();
+  await share.click();
+  const dialog = page.getByRole('dialog', { name: 'Share Chicken biryani with extra seasonal vegetables' });
+  await expect(dialog).toBeFocused();
+  await expect(dialog.getByRole('checkbox', { name: /You/ })).toBeChecked();
+  await expect(dialog.getByRole('checkbox', { name: /You/ })).toBeDisabled();
+  await page.keyboard.press('Shift+Tab');
+  await expect(dialog.getByRole('button', { name: 'Share item' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('checkbox', { name: /Asha/ })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(share).toBeFocused();
+  await share.click();
+  await dialog.getByRole('checkbox', { name: /Asha/ }).check();
+  // Delay the response to check that saving cannot be submitted twice.
+  let finishSave: (() => void) | undefined;
+  await page.route('**/rpc/set_shared_claim', async route => {
+    await new Promise<void>(resolve => { finishSave = resolve; });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(null) });
+  });
+  await dialog.getByRole('button', { name: 'Share item' }).click();
+  await expect(dialog.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath('sharing-dark.png'), fullPage: true });
+  await expect.poll(() => Boolean(finishSave)).toBe(true);
+  finishSave!();
+  await expect(dialog).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('copying a payment amount uses the displayed currency units', async ({ page, context, request }) => {
+  await request.post(`${fixtureBase}/reset`);
+  await request.post(`${fixtureBase}/rest/v1/splits`, { data: { restaurant_name: 'Test Kitchen', currency: 'SGD', status: 'OPEN', vat: 0, service_charge: 0, discount: 0, receipt_total: 12345 } });
+  await request.post(`${fixtureBase}/rest/v1/items`, { data: [{ name: 'Dinner', quantity: 1, unit_price: 12345 }] });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto(`http://127.0.0.1:3002/s/${publicToken}`);
+  await page.getByRole('button', { name: 'Add Dinner' }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByLabel('Your name').fill('Asha');
+  await page.getByLabel('Your name').press('Enter');
+  await expect(page.locator('.pay-amount')).toHaveText('S$123.45');
+  await page.getByRole('button', { name: 'Copy amount' }).click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('123.45');
 });

@@ -4,6 +4,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '../components/theme';
+import { WebPolish } from '../components/web-polish';
 import { DraftProvider } from '../state/draft';
 import { AuthProvider, useAuth } from '../state/auth';
 
@@ -11,6 +12,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
+        <WebPolish />
         <AuthProvider>
           <DraftProvider>
             <Navigation />

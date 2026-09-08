@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { calculateSplit } from "@splitsave/split-engine";
-import { formatMoney } from "@splitsave/types";
+import { currencyOf, formatMoney } from "@splitsave/types";
+import { BillSteps } from "./bill-chrome";
 import { QuantityStepper } from "./quantity-stepper";
 import { ShareItemModal } from "./share-item-modal";
 import { getSessionId } from "@/lib/guest-session";
@@ -48,6 +49,13 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   // Every amount on this page belongs to the split's own currency, not the
   // viewer's locale — a guest abroad still owes taka.
   const currencyCode = split.split.currency ?? "BDT";
+  /**
+   * Once the host has confirmed the money, this guest's share is fixed.
+   * Walking back from the "all settled" screen used to let them report
+   * payment again, which reset the host's confirmation and wiped the
+   * transaction reference behind it.
+   */
+  const settled = split.myPaymentStatus === "CONFIRMED";
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("claim");
   const [name, setName] = useState("");
@@ -55,6 +63,14 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [sharing, setSharing] = useState<string | null>(null);
+  /** Quantities shown before the server has caught up. */
+  const [pending, setPending] = useState<Record<string, number>>({});
+  const writeTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // A queued write must not fire after the component is gone.
+  useEffect(() => () => {
+    for (const timer of Object.values(writeTimers.current)) clearTimeout(timer);
+  }, []);
 
   /**
    * Copy with visible confirmation — a silent copy leaves people unsure it
@@ -141,8 +157,8 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
 
   const myGuestId = split.myGuestId;
 
-  /** How many of each item this guest currently holds, straight from the server. */
-  const myQuantities = useMemo(() => {
+  /** What the server says this guest holds. */
+  const serverQuantities = useMemo(() => {
     const mine: Record<string, number> = {};
     if (!myGuestId) return mine;
     for (const claim of split.claims) {
@@ -150,6 +166,30 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     }
     return mine;
   }, [split.claims, myGuestId]);
+
+  /**
+   * What to show: the optimistic value while a write is in flight, otherwise
+   * the server's. A pending entry is dropped once the server agrees, so a
+   * rejected claim falls back rather than lingering as a number that is not real.
+   */
+  const myQuantities = useMemo(() => {
+    const merged = { ...serverQuantities };
+    for (const [itemId, quantity] of Object.entries(pending)) merged[itemId] = quantity;
+    return merged;
+  }, [serverQuantities, pending]);
+
+  // Once the server reports the number we optimistically showed, stop overriding it.
+  useEffect(() => {
+    setPending((current) => {
+      const next: Record<string, number> = {};
+      let changed = false;
+      for (const [itemId, quantity] of Object.entries(current)) {
+        if ((serverQuantities[itemId] ?? 0) === quantity) changed = true;
+        else next[itemId] = quantity;
+      }
+      return changed ? next : current;
+    });
+  }, [serverQuantities]);
 
   /** Units still unclaimed by anyone else — this guest's own claims stay available to them. */
   const availability = useMemo(() => {
@@ -189,23 +229,44 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   const hasUnclaimed = split.items.some(item =>
     split.claims.filter(claim => claim.itemId === item.id).reduce((sum, claim) => sum + claim.quantity, 0) < item.quantity,
   );
-  const estimateNote = hasUnclaimed ? <p className="quiet">Includes your share of charges. Rounding may adjust by a few taka as everyone finishes claiming.</p> : null;
+  const estimateNote = hasUnclaimed ? <p className="quiet">Includes your share of charges. The final amount may change slightly as everyone finishes choosing.</p> : null;
 
   const itemCount = Object.values(myQuantities).reduce((sum, value) => sum + value, 0);
 
-  const update = async (itemId: string, quantity: number) => {
-    if (!sessionId) return;
-    setBusy(true);
+  /**
+   * Tapping + used to write to the server and wait, with every stepper disabled
+   * until it came back. On a slow connection that reads as the quantity not
+   * updating, and taps made during the wait were dropped on the floor.
+   *
+   * Show the new number immediately and reconcile afterwards. Writes are
+   * queued per item so three quick taps become one request for three, and the
+   * optimistic value is only cleared once the server's own count arrives —
+   * clearing it on response would flash the old number back.
+   */
+  const update = (itemId: string, quantity: number) => {
+    if (!sessionId || settled) return;
     setError(null);
-    try {
-      await setClaim(token, sessionId, itemId, quantity);
-      await reload();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-      await reload().catch(() => {});
-    } finally {
-      setBusy(false);
-    }
+    setPending((current) => ({ ...current, [itemId]: quantity }));
+
+    const existing = writeTimers.current[itemId];
+    if (existing) clearTimeout(existing);
+
+    writeTimers.current[itemId] = setTimeout(async () => {
+      delete writeTimers.current[itemId];
+      try {
+        await setClaim(token, sessionId, itemId, quantity);
+        await reload();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : String(cause));
+        // Drop the optimistic value so the server's truth shows through.
+        setPending((current) => {
+          const next = { ...current };
+          delete next[itemId];
+          return next;
+        });
+        await reload().catch(() => {});
+      }
+    }, 350);
   };
 
   const submitName = async () => {
@@ -238,22 +299,54 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     }
   };
 
+  const sharingItem = split.items.find((item) => item.id === sharing) ?? null;
+
+  /** Who each of my claims is currently shared with, so reopening pre-ticks them. */
+  const sharedWith = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    if (!myGuestId) return map;
+    for (const claim of split.claims) {
+      if (claim.guestId === myGuestId && claim.allocationType === "SHARED") {
+        map[claim.itemId] = claim.participantIds ?? [];
+      }
+    }
+    return map;
+  }, [split.claims, myGuestId]);
+
+  /** Everyone on the split, me first — the server rejects anyone who hasn't joined. */
+  const sharePeople = useMemo(() => {
+    const named = split.guests.map((guest) => ({
+      id: guest.id,
+      displayName:
+        guest.id === myGuestId ? `You${name.trim() ? ` (${name.trim()})` : ""}` : guest.displayName?.trim() || "Still choosing",
+    }));
+    return named.sort((a, b) => (a.id === myGuestId ? -1 : b.id === myGuestId ? 1 : 0));
+  }, [split.guests, myGuestId, name]);
+
   const banner = error ? <p role="alert" className="quiet error">{error}</p> : null;
   const hostName = split.split.hostDisplayName?.trim() || "your host";
+
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+    if (stage !== "claim") document.getElementById("stage-title")?.focus();
+  }, [stage]);
 
   if (stage === "confirm")
     return (
       <section className="screen">
+        <BillSteps stage="confirm" />
         <header className="split-header">
-          <p className="eyebrow">SplitSave</p>
           <button className="text-button back-button" onClick={() => setStage("claim")}>← Edit items</button>
-          <h1>Confirm your share</h1>
-          <p>Tell your friends whose items these are.</p>
+          <h1 id="stage-title" tabIndex={-1}>Confirm your share</h1>
+          <p>One last look, then you’re ready to pay.</p>
         </header>
-        <label className="field">
-          <span>Your name</span>
-          <input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Tanvir" />
-        </label>
+        <form id="guest-details" onSubmit={(event) => { event.preventDefault(); if (name.trim() && itemCount > 0 && !busy) void submitName(); }}>
+          <label className="field">
+            <span>Your name</span>
+            <input autoComplete="given-name" maxLength={100} required value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Tanvir" />
+            <small>So your host knows it’s you.</small>
+          </label>
+        </form>
         <div className="summary">
           <span>{hasUnclaimed ? "Your estimated share" : "You’ll pay"}</span>
           <strong>{money(myTotals.total, currencyCode)}</strong>
@@ -267,7 +360,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
         {estimateNote}
         {banner}
         <footer className="bottom-bar">
-          <button className="button" disabled={!name.trim() || itemCount === 0 || busy} onClick={submitName}>
+          <button className="button" type="submit" form="guest-details" disabled={!name.trim() || itemCount === 0 || busy}>
             {busy ? "Saving…" : `Confirm ${money(myTotals.total, currencyCode)}`}
           </button>
         </footer>
@@ -277,9 +370,10 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   if (stage === "pay")
     return (
       <section className="screen">
+        <BillSteps stage="pay" />
         <header className="split-header pay-header">
           <div className="success-mark small">✓</div>
-          <h1>Thanks, {name.trim() || "friend"}!</h1>
+          <h1 id="stage-title" tabIndex={-1}>Thanks, {name.trim() || "friend"}!</h1>
           <p>Here’s how to pay.</p>
         </header>
 
@@ -287,7 +381,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
           <span className="send-label">Send</span>
           <strong className="pay-amount">{money(myTotals.total, currencyCode)}</strong>
           <span className="send-label">to {hostName}</span>
-          <button className="text-button" onClick={() => copyValue(String(myTotals.total), "Amount copied")}>
+          <button className="text-button" onClick={() => copyValue((myTotals.total / 10 ** currencyOf(currencyCode).minorUnits).toFixed(currencyOf(currencyCode).minorUnits), "Amount copied")}>
             Copy amount
           </button>
         </div>
@@ -301,8 +395,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
           .filter((method) => method.number)
           .map((method) => (
             <div className={`payment-method ${method.key}`} key={method.key}>
-              <b>{method.label}</b>
-              <span className="number">{method.number}</span>
+              <div className="wallet-details"><b>{method.label}</b><span className="number">{method.number}</span></div>
               <button className="text-button" onClick={() => copyValue(method.number!, `${method.label} number copied`)}>
                 Copy
               </button>
@@ -330,9 +423,11 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     const confirmed = split.myPaymentStatus === "CONFIRMED";
     return (
       <section className="screen success">
+        <BillSteps stage="done" />
+        <div className="success-content">
         <div className={`success-mark${confirmed ? " confirmed" : ""}`}>✓</div>
         <p className="eyebrow">{confirmed ? "Payment confirmed" : "Payment reported"}</p>
-        <h1>{confirmed ? "All settled" : "You’re all set"}</h1>
+        <h1 id="stage-title" tabIndex={-1}>{confirmed ? "All settled" : "You’re all set"}</h1>
         <p>
           You claimed {itemCount} {itemCount === 1 ? "item" : "items"} as {name || "a guest"}.
         </p>
@@ -346,35 +441,10 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
           )}
         </div>
         <button className="secondary-button" onClick={() => setStage("claim")}>View full split</button>
+        </div>
       </section>
     );
   }
-
-  // every() is vacuously true on an empty list, which told guests of an
-  // item-less bill that someone else had claimed everything.
-  const sharingItem = split.items.find((item) => item.id === sharing) ?? null;
-
-  /** Who each of my claims is currently shared with, so reopening pre-ticks them. */
-  const sharedWith = useMemo(() => {
-    const map: Record<string, string[]> = {};
-    if (!myGuestId) return map;
-    for (const claim of split.claims) {
-      if (claim.guestId === myGuestId && claim.allocationType === "SHARED") {
-        map[claim.itemId] = claim.participantIds ?? [];
-      }
-    }
-    return map;
-  }, [split.claims, myGuestId]);
-
-  /** Everyone on the split, me first — the server rejects anyone who hasn't joined. */
-  const sharePeople = useMemo(() => {
-    const named = split.guests.map((guest) => ({
-      id: guest.id,
-      displayName:
-        guest.id === myGuestId ? `You${name.trim() ? ` (${name.trim()})` : ""}` : guest.displayName?.trim() || "Still choosing",
-    }));
-    return named.sort((a, b) => (a.id === myGuestId ? -1 : b.id === myGuestId ? 1 : 0));
-  }, [split.guests, myGuestId, name]);
 
   const shareItem = async (itemId: string, participantIds: string[]) => {
     if (!sessionId) return;
@@ -443,14 +513,13 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
 
   return (
     <section className="screen">
+      <BillSteps stage="claim" />
+      <div className="bill-context"><div><span className="eyebrow">THE TABLE’S BILL</span><p>{split.split.restaurantName}</p></div><time>{formatSplitDate(split.split.splitDate)}</time></div>
       <header className="split-header">
-        <p className="eyebrow">{split.split.restaurantName}</p>
-        <h1>What did you have?</h1>
-        <p>
-          {formatSplitDate(split.split.splitDate)} · Select your quantities.
-          {others.length ? ` ${others.length} other ${others.length === 1 ? "person is" : "people are"} claiming too.` : ""}
-        </p>
+        <h1 id="stage-title" tabIndex={-1}>What did you have?</h1>
+        <p>Choose your items. We’ll work out your share of the bill and charges.</p>
       </header>
+      <div className="list-caption"><span>ON THE RECEIPT</span><span>{split.items.length} {split.items.length === 1 ? "item" : "items"}</span></div>
       <div className="items">
         {split.items.map((item) => {
           const left = availability[item.id] ?? 0;
@@ -464,26 +533,28 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
                 {left === 0 && mine === 0 ? "all claimed" : `${left - mine} left`}
               </p>
             </div>
+            <div className="claim-controls">
             <QuantityStepper
               label={item.name}
               value={myQuantities[item.id] ?? 0}
               maximum={availability[item.id] ?? 0}
               // Taps before the session exists would be dropped silently.
-              disabled={!sessionId || busy}
+              disabled={!sessionId || settled}
               onChange={(value) => update(item.id, value)}
             />
             {/* Sharing needs someone to share with, so only offer it once
                 another guest has joined. */}
-            {others.length > 0 && (mine > 0 || left > 0) ? (
+            {others.length > 0 && mine > 0 ? (
               <button
                 type="button"
                 className="share-link"
                 disabled={!sessionId || busy}
-                onClick={() => setSharing(item.id)}
+                onClick={() => { setError(null); setSharing(item.id); }}
               >
                 {sharedWith[item.id]?.length ? `Shared with ${sharedWith[item.id]!.length}` : "Share"}
               </button>
             ) : null}
+            </div>
           </article>
           );
         })}
@@ -498,17 +569,27 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
           selected={sharedWith[sharingItem.id] ?? (myGuestId ? [myGuestId] : [])}
           onCancel={() => setSharing(null)}
           onConfirm={(participants) => shareItem(sharingItem.id, participants)}
+          busy={busy}
+          error={error}
+          requiredParticipantId={myGuestId ?? undefined}
         />
       ) : null}
+      <p className="receipt-footnote">{others.length ? `${others.length} other ${others.length === 1 ? "person is" : "people are"} at this table. Sharing a dish? Choose it first, then tap Share.` : "Just pick what’s yours. Your host can see everyone’s claims."}</p>
       {banner}
       <footer className="bottom-bar">
-        <div>
+        <div aria-live="polite" aria-atomic="true">
           <span>{itemCount ? `${itemCount} ${itemCount === 1 ? "item" : "items"} selected` : "Choose your items"}</span>
           <strong>{money(myTotals.total, currencyCode)}</strong>
         </div>
-        <button className="button compact" disabled={itemCount === 0 || busy} onClick={() => setStage("confirm")}>
-          Continue
-        </button>
+        {settled ? (
+          <button className="button compact" onClick={() => setStage("done")}>
+            Settled
+          </button>
+        ) : (
+          <button className="button compact" disabled={itemCount === 0 || busy} onClick={() => setStage("confirm")}>
+            Continue
+          </button>
+        )}
       </footer>
     </section>
   );

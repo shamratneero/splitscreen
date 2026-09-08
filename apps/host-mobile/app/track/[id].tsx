@@ -5,7 +5,7 @@ import { Button, Page, Surface, Toolbar, taka, ui } from '../../components/ui';
 import { RecordPayments } from '../../components/record-payments';
 import { Icon } from '../../components/icon';
 import { useTheme } from '../../components/theme';
-import { confirmPayment, confirmPayments, fetchSplitTracking, recordedReferences, subscribeToSplit, type SplitTracking, type TrackedGuest } from '../../lib/split-tracking';
+import { confirmPayment, confirmPayments, deleteSplit, fetchSplitTracking, recordedReferences, subscribeToSplit, type SplitTracking, type TrackedGuest } from '../../lib/split-tracking';
 
 /** "2026-09-07" is a database value; hosts should read "7 Sep". */
 const formatDate = (value: string) => {
@@ -29,6 +29,8 @@ export default function TrackScreen() {
   const [tab, setTab] = useState<'people' | 'items'>('people');
   const [error, setError] = useState<string | null>(null);
   const [busyGuest, setBusyGuest] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -101,13 +103,16 @@ export default function TrackScreen() {
         {formatDate(data.splitDate)} · {people} {people === 1 ? 'person' : 'people'}
       </Text>
 
-      <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.soft, overflow: 'hidden' }}>
+      <Surface style={{ padding: 24 }}>
+      <Text style={{ color: colors.muted, fontSize: 12 }}>Collected so far</Text>
+      <Text style={{ color: colors.ink, fontSize: 40, fontWeight: '500', letterSpacing: -1.4, fontVariant: ['tabular-nums'], marginTop: 6, marginBottom: 22 }}>{taka(collected, data.currency)}</Text>
+      <View accessibilityRole="progressbar" accessibilityLabel="Guests who have paid" accessibilityValue={{ min: 0, max: Math.max(people, 1), now: data.confirmedCount, text: `${data.confirmedCount} of ${people} confirmed` }} style={{ height: 5, borderRadius: 3, backgroundColor: colors.soft, overflow: 'hidden' }}>
         <View style={{ width: `${Math.round(progress * 100)}%`, height: '100%', backgroundColor: colors.primary }} />
       </View>
       <Text style={{ color: colors.ink, fontSize: 13, fontWeight: '600', marginTop: 8 }}>
         {data.confirmedCount} of {people} confirmed
       </Text>
-      <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>{taka(collected, data.currency)} received</Text>
+      </Surface>
 
       <View style={{ flexDirection: 'row', backgroundColor: colors.soft, borderRadius: 12, padding: 4, marginTop: 18 }}>
         {(['people', 'items'] as const).map((key) => (
@@ -213,6 +218,56 @@ export default function TrackScreen() {
             }}
           />
         ) : null}
+
+        <View style={{ marginTop: 26, paddingTop: 18, borderTopWidth: 1, borderColor: colors.line }}>
+          {confirmingDelete ? (
+            <View style={{ gap: 10 }}>
+              <Text style={{ color: colors.amber, fontSize: 13, lineHeight: 19 }}>
+                {data.guests.some(guest => guest.paymentStatus === 'CONFIRMED')
+                  ? 'Some guests have already paid. Deleting removes this bill, everyone’s claims and the record of those payments. The guest link stops working.'
+                  : 'This removes the bill and everyone’s claims. The guest link stops working.'}
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Keep this split"
+                  onPress={() => setConfirmingDelete(false)}
+                  style={{ flex: 1, minHeight: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.soft }}
+                >
+                  <Text style={{ color: colors.primary, fontWeight: '600' }}>Keep it</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Permanently delete this split"
+                  disabled={deleting}
+                  onPress={async () => {
+                    setDeleting(true);
+                    try {
+                      await deleteSplit(String(id));
+                      router.replace('/splits');
+                    } catch (cause) {
+                      setError(cause instanceof Error ? cause.message : String(cause));
+                      setDeleting(false);
+                      setConfirmingDelete(false);
+                    }
+                  }}
+                  style={{ flex: 1, minHeight: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.amber, opacity: deleting ? 0.6 : 1 }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700' }}>{deleting ? 'Deleting…' : 'Delete'}</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Delete this split"
+              onPress={() => setConfirmingDelete(true)}
+              style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: colors.amber, fontWeight: '600', fontSize: 14 }}>Delete this split</Text>
+            </Pressable>
+          )}
+        </View>
 
         {data.unclaimed.length ? (
           <View style={{ backgroundColor: colors.soft, borderRadius: 16, padding: 14, marginTop: 14 }}>

@@ -8,8 +8,8 @@ export function GlassSurface({ interactive: _interactive, style, ...props }: Gla
   const material = {
     backgroundColor: reducedTransparency ? colors.surface : colors.glass,
     borderWidth: 1, borderColor: colors.glassEdge, borderRadius: 24,
-    backdropFilter: 'blur(24px) saturate(160%)', WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,.45), 0 8px 32px rgba(19,49,34,.09), 0 1px 3px rgba(19,49,34,.06)',
+    backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+    boxShadow: '0 4px 20px rgba(20,32,24,.06)',
   } as ViewStyle;
   return <View {...props} testID={props.testID ?? 'glass-surface'} style={[material, style]}>
     {createElement('style', null, '@media (prefers-reduced-transparency: reduce) { [data-testid="glass-surface"] { backdrop-filter:none!important; -webkit-backdrop-filter:none!important; background: ' + colors.surface + '!important; } }')}
