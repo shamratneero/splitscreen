@@ -54,6 +54,29 @@ export async function setClaim(token: string, sessionId: string, itemId: string,
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Claims an item split evenly across named people — one kacchi between three.
+ * Everyone listed must already have joined this split, and the caller must be
+ * one of them; the RPC enforces both so a guest can't bind strangers to a
+ * charge. Passing 0 removes the claim.
+ */
+export async function setSharedClaim(
+  token: string,
+  sessionId: string,
+  itemId: string,
+  quantity: number,
+  participantIds: string[],
+): Promise<void> {
+  const { error } = await supabase.rpc("set_shared_claim", {
+    p_token: token,
+    p_session_id: sessionId,
+    p_item_id: itemId,
+    p_quantity: quantity,
+    p_participant_ids: participantIds,
+  });
+  if (error) throw new Error(error.message);
+}
+
 export async function confirmGuestDetails(token: string, sessionId: string, displayName: string): Promise<void> {
   const { error } = await supabase.rpc("confirm_guest_details", {
     p_token: token,

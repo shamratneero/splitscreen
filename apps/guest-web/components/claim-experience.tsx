@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { calculateSplit } from "@splitpay/split-engine";
 import { formatMoney } from "@splitpay/types";
 import { QuantityStepper } from "./quantity-stepper";
+import { ShareItemModal } from "./share-item-modal";
 import { getSessionId } from "@/lib/guest-session";
 import {
   confirmGuestDetails,
   fetchPublicSplit,
   reportGuestPayment,
   setClaim,
+  setSharedClaim,
   type PublicSplit,
 } from "@/lib/split-repository";
 
@@ -51,6 +53,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [sharing, setSharing] = useState<string | null>(null);
 
   /**
    * Copy with visible confirmation — a silent copy leaves people unsure it
@@ -351,6 +354,46 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
 
   // every() is vacuously true on an empty list, which told guests of an
   // item-less bill that someone else had claimed everything.
+  const sharingItem = split.items.find((item) => item.id === sharing) ?? null;
+
+  /** Who each of my claims is currently shared with, so reopening pre-ticks them. */
+  const sharedWith = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    if (!myGuestId) return map;
+    for (const claim of split.claims) {
+      if (claim.guestId === myGuestId && claim.allocationType === "SHARED") {
+        map[claim.itemId] = claim.participantIds ?? [];
+      }
+    }
+    return map;
+  }, [split.claims, myGuestId]);
+
+  /** Everyone on the split, me first — the server rejects anyone who hasn't joined. */
+  const sharePeople = useMemo(() => {
+    const named = split.guests.map((guest) => ({
+      id: guest.id,
+      displayName:
+        guest.id === myGuestId ? `You${name.trim() ? ` (${name.trim()})` : ""}` : guest.displayName?.trim() || "Still choosing",
+    }));
+    return named.sort((a, b) => (a.id === myGuestId ? -1 : b.id === myGuestId ? 1 : 0));
+  }, [split.guests, myGuestId, name]);
+
+  const shareItem = async (itemId: string, participantIds: string[]) => {
+    if (!sessionId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      // One unit shared between the chosen people; the engine divides its value.
+      await setSharedClaim(token, sessionId, itemId, 1, participantIds);
+      await reload();
+      setSharing(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const nothingLeft =
     split.items.length > 0 && split.items.every((item) => (availability[item.id] ?? 0) === 0);
   const others = split.guests.filter((guest) => guest.id !== myGuestId);
@@ -431,10 +474,34 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
               disabled={!sessionId || busy}
               onChange={(value) => update(item.id, value)}
             />
+            {/* Sharing needs someone to share with, so only offer it once
+                another guest has joined. */}
+            {others.length > 0 && (mine > 0 || left > 0) ? (
+              <button
+                type="button"
+                className="share-link"
+                disabled={!sessionId || busy}
+                onClick={() => setSharing(item.id)}
+              >
+                {sharedWith[item.id]?.length ? `Shared with ${sharedWith[item.id]!.length}` : "Share"}
+              </button>
+            ) : null}
           </article>
           );
         })}
       </div>
+
+      {sharingItem ? (
+        <ShareItemModal
+          itemName={sharingItem.name}
+          unitPrice={sharingItem.unitPrice}
+          currency={currencyCode}
+          people={sharePeople}
+          selected={sharedWith[sharingItem.id] ?? (myGuestId ? [myGuestId] : [])}
+          onCancel={() => setSharing(null)}
+          onConfirm={(participants) => shareItem(sharingItem.id, participants)}
+        />
+      ) : null}
       {banner}
       <footer className="bottom-bar">
         <div>

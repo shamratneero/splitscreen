@@ -65,3 +65,28 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid v
   .quiet.error { color:#ffb4ab; }
   .claim-row.selected .stepper output, .text-button { color:#7ed2a5; }
 }
+
+/* Sharing one item across several people. */
+.sheet-backdrop { position:fixed; inset:0; z-index:10; display:flex; align-items:flex-end; justify-content:center;
+  background:rgba(12,30,20,.42); animation:fade .16s ease-out; }
+@keyframes fade { from { opacity:0 } to { opacity:1 } }
+.sheet { width:min(100%,480px); max-height:86vh; overflow-y:auto; background:var(--surface);
+  border-radius:22px 22px 0 0; padding:22px 20px calc(20px + env(safe-area-inset-bottom));
+  animation:rise .2s ease-out; outline:none; }
+@keyframes rise { from { transform:translateY(14px) } to { transform:none } }
+.sheet-header h2 { margin:0 0 4px; font-size:19px; }
+.sheet-item { display:flex; justify-content:space-between; align-items:center; padding:14px 0; margin-top:12px;
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line); font-size:15px; }
+.people-picker { list-style:none; margin:4px 0 0; padding:0; }
+.people-picker label { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center;
+  min-height:52px; cursor:pointer; font-size:15px; }
+.people-picker input { width:21px; height:21px; accent-color:var(--green); }
+.people-picker .share { color:var(--green); font-weight:600; font-size:13px; font-variant-numeric:tabular-nums; }
+.split-note { margin:10px 0 0; }
+.sheet-actions { display:flex; gap:10px; margin-top:18px; }
+.sheet-actions .button, .sheet-actions .secondary-button { flex:1; }
+
+/* Share affordance on a claim row. */
+.share-link { grid-column:2; justify-self:end; margin-top:6px; padding:4px 0; border:0;
+  background:transparent; color:var(--green); font-weight:600; font-size:13px; }
+.share-link:disabled { opacity:.4; }
