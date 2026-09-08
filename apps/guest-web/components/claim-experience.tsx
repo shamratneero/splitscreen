@@ -6,6 +6,7 @@ import { formatMoney } from "@splitsave/types";
 import { QuantityStepper } from "./quantity-stepper";
 import { ShareItemModal } from "./share-item-modal";
 import { getSessionId } from "@/lib/guest-session";
+import { useLiveSplit } from "@/lib/use-live-split";
 import {
   confirmGuestDetails,
   fetchPublicSplit,
@@ -128,18 +129,15 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   }, [token, sessionId]);
 
   /**
-   * Once the guest is waiting on the host, nothing they do will refresh the
-   * page — so poll until the host confirms. Also keeps availability honest
-   * while people are still claiming.
+   * Claims arrive from other people's phones and confirmations from the host,
+   * so this page has to learn about changes it did not cause. Stop once the
+   * host has confirmed: nothing after that alters what this guest owes.
    */
-  useEffect(() => {
-    if (!sessionId) return;
-    if (split.myPaymentStatus === "CONFIRMED") return;
-    const timer = setInterval(() => {
-      reload().catch(() => {});
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [sessionId, split.myPaymentStatus, reload]);
+  useLiveSplit(
+    split.split.id,
+    () => { reload().catch(() => {}); },
+    Boolean(sessionId) && split.myPaymentStatus !== "CONFIRMED",
+  );
 
   const myGuestId = split.myGuestId;
 

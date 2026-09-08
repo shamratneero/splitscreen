@@ -54,6 +54,8 @@ export type HostProfile = {
   displayName: string;
   bkashNumber: string | null;
   nagadNumber: string | null;
+  /** Currency every new split inherits. */
+  defaultCurrency: string;
 };
 
 /** The signed-in host's id, or null when nobody is signed in. */
@@ -108,7 +110,7 @@ export async function fetchHostProfile(): Promise<HostProfile | null> {
   if (!id) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, display_name, bkash_number, nagad_number')
+    .select('id, display_name, bkash_number, nagad_number, default_currency')
     .eq('id', id)
     .single();
   if (error) throw new Error(error.message);
@@ -117,6 +119,7 @@ export async function fetchHostProfile(): Promise<HostProfile | null> {
     displayName: data.display_name ?? '',
     bkashNumber: data.bkash_number,
     nagadNumber: data.nagad_number,
+    defaultCurrency: data.default_currency ?? 'BDT',
   };
 }
 

@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import { Button, Page, Surface, Toolbar, taka, ui } from '../../components/ui';
 import { Icon } from '../../components/icon';
 import { useTheme } from '../../components/theme';
-import { confirmPayment, fetchSplitTracking, type SplitTracking, type TrackedGuest } from '../../lib/split-tracking';
+import { confirmPayment, fetchSplitTracking, subscribeToSplit, type SplitTracking, type TrackedGuest } from '../../lib/split-tracking';
 
 /** "2026-09-07" is a database value; hosts should read "7 Sep". */
 const formatDate = (value: string) => {
@@ -38,12 +38,18 @@ export default function TrackScreen() {
     }
   }, [id]);
 
-  // Claims arrive from other people's phones, so poll while this screen is open.
+  /**
+   * Claims arrive from other people's phones. Realtime carries them the moment
+   * they land; the slow poll behind it covers a socket that dropped without
+   * saying so, which a host watching a table fill up would otherwise never
+   * notice.
+   */
   useEffect(() => {
     load();
-    const timer = setInterval(load, 5000);
-    return () => clearInterval(timer);
-  }, [load]);
+    const stop = subscribeToSplit(String(id), load);
+    const timer = setInterval(load, 30000);
+    return () => { stop(); clearInterval(timer); };
+  }, [load, id]);
 
   const markPaid = async (guest: TrackedGuest) => {
     setBusyGuest(guest.id);

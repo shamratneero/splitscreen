@@ -163,3 +163,20 @@ export async function confirmPayment(guestId: string, amount: number): Promise<v
     );
   if (error) throw new Error(error.message);
 }
+
+/**
+ * Calls `onChange` whenever a guest claims, names themselves, or pays.
+ *
+ * The host is watching a table fill up in real time, so a five-second lag is
+ * visible. Returns an unsubscribe function; the caller keeps a slow poll as a
+ * fallback because a dropped socket is silent.
+ */
+export function subscribeToSplit(splitId: string, onChange: () => void): () => void {
+  const channel = supabase
+    .channel(`host:${splitId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'claims' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'guests', filter: `split_id=eq.${splitId}` }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, onChange)
+    .subscribe();
+  return () => { void supabase.removeChannel(channel); };
+}
