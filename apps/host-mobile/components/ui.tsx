@@ -37,7 +37,9 @@ export function Button({ title, onPress, icon, secondary = false, disabled = fal
   const foreground = secondary ? colors.ink : '#FFFFFF';
   const action = () => { if (Platform.OS === 'ios') void Haptics.selectionAsync().catch(() => {}); onPress(); };
   return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={action}
-    style={({ pressed }) => [ui.button, { backgroundColor: secondary ? colors.surface : '#245C45', borderColor: secondary ? colors.line : '#245C45', opacity: pressed ? .82 : 1 }, disabled && { backgroundColor: colors.line, borderColor: colors.line }]}>
+    // A slight give under the finger, alongside the dim: scale reads as
+    // physical in a way opacity alone does not, and it survives every theme.
+    style={({ pressed }) => [ui.button, { backgroundColor: secondary ? colors.surface : '#245C45', borderColor: secondary ? colors.line : '#245C45', opacity: pressed ? .9 : 1, transform: [{ scale: pressed ? 0.975 : 1 }] }, disabled && { backgroundColor: colors.line, borderColor: colors.line, transform: [{ scale: 1 }] }]}>
     {icon && <Icon name={icon} color={disabled ? colors.muted : foreground} size={20} />}<Text style={[ui.buttonText, { color: disabled ? colors.muted : foreground }]}>{title}</Text>
   </Pressable>;
 }

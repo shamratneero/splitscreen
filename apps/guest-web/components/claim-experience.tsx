@@ -66,6 +66,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
   /** Quantities shown before the server has caught up. */
   const [pending, setPending] = useState<Record<string, number>>({});
   const writeTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [bumped, setBumped] = useState(false);
 
   // A queued write must not fire after the component is gone.
   useEffect(() => () => {
@@ -225,6 +226,16 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
       return { itemSubtotal: 0, vat: 0, serviceCharge: 0, discount: 0, total: 0 };
     }
   }, [split, myGuestId]);
+
+  /** A brief flourish when the share changes, so a tap that only moves a number still reads as having landed. */
+  const lastTotal = useRef(0);
+  useEffect(() => {
+    if (myTotals.total === lastTotal.current) return;
+    lastTotal.current = myTotals.total;
+    setBumped(true);
+    const timer = setTimeout(() => setBumped(false), 340);
+    return () => clearTimeout(timer);
+  }, [myTotals.total]);
 
   const hasUnclaimed = split.items.some(item =>
     split.claims.filter(claim => claim.itemId === item.id).reduce((sum, claim) => sum + claim.quantity, 0) < item.quantity,
@@ -579,7 +590,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
       <footer className="bottom-bar">
         <div aria-live="polite" aria-atomic="true">
           <span>{itemCount ? `${itemCount} ${itemCount === 1 ? "item" : "items"} selected` : "Choose your items"}</span>
-          <strong>{money(myTotals.total, currencyCode)}</strong>
+          <strong className={bumped ? "bumped" : undefined}>{money(myTotals.total, currencyCode)}</strong>
         </div>
         {settled ? (
           <button className="button compact" onClick={() => setStage("done")}>

@@ -157,3 +157,77 @@ h2 { margin: 0; }
   .payment-method.nagad b { color: #f7b789; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+/* ---------------------------------------------------------------------------
+   Motion and touch feedback.
+
+   The interface was correct but inert: nothing acknowledged a tap, and a
+   disabled button dropped to 40% opacity, which on a green fill fails contrast
+   badly enough to read as broken rather than unavailable. On a phone passed
+   around a dinner table, feedback is most of what makes an interface feel
+   trustworthy — you need to know the tap landed before the network answers.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Slight overshoot: motion that decelerates past its target reads as
+     physical rather than mechanical. */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --tap: 90ms;
+}
+
+/* Legible when unavailable, rather than faded to near-invisible. */
+button:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+  background: var(--line);
+  color: var(--muted);
+  border-color: transparent;
+  box-shadow: none;
+}
+.stepper button:disabled { background: transparent; color: var(--muted); opacity: .45; }
+
+/* Press feedback. Scale rather than colour so it survives every theme. */
+.button, .secondary-button, .stepper button, .share-link, .text-button {
+  transition: transform var(--tap) var(--ease-out), background-color 150ms, color 150ms, border-color 150ms;
+}
+.button:active:not(:disabled), .secondary-button:active:not(:disabled) { transform: scale(.975); }
+.stepper button:active:not(:disabled) { transform: scale(.86); background: var(--soft); }
+.share-link:active:not(:disabled), .text-button:active:not(:disabled) { opacity: .55; }
+
+/* The stepper is the control people use most, so it gets the clearest state. */
+.stepper { transition: background-color 180ms var(--ease-out), border-color 180ms var(--ease-out); }
+.claim-row { transition: opacity 220ms var(--ease-out); }
+.claim-row.selected h2 { color: var(--green); }
+
+/* A changing total should catch the eye without shouting. */
+.bottom-bar strong { transition: color 200ms var(--ease-out); }
+.bottom-bar strong.bumped { animation: bump 320ms var(--ease-out); }
+@keyframes bump {
+  0% { transform: none; }
+  38% { transform: translateY(-3px) scale(1.045); color: var(--green); }
+  100% { transform: none; }
+}
+
+/* Each stage arrives rather than snapping in. */
+.screen { animation: enter 260ms var(--ease-out) both; }
+@keyframes enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* The confirmation tick is the one place a flourish is earned. */
+.success-mark { animation: pop 420ms var(--ease-out) both; }
+@keyframes pop {
+  0% { transform: scale(.55); opacity: 0; }
+  55% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Motion is decoration; never let it get in the way of using the thing. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
