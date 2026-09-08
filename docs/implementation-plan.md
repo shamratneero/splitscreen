@@ -1,4 +1,4 @@
-# AddaSplit implementation plan
+# SplitPay implementation plan
 
 ## Implemented
 

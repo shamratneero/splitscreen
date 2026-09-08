@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./styles.css";
 
 export const metadata: Metadata = {
-  title: "AddaSplit",
+  title: "SplitPay",
   description: "Claim your share without installing an app.",
 };
 

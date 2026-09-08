@@ -1,5 +1,5 @@
 {
-  "name": "@addasplit/receipt-parser",
+  "name": "@splitpay/receipt-parser",
   "version": "0.1.0",
   "private": true,
   "type": "module",

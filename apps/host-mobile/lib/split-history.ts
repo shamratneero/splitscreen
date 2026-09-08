@@ -1,4 +1,4 @@
-import { calculateSplit } from '@addasplit/split-engine';
+import { calculateSplit } from '@splitpay/split-engine';
 import { requireHostId, supabase } from './supabase';
 
 export type SplitSummary = {

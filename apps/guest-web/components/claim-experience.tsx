@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { calculateSplit } from "@addasplit/split-engine";
+import { calculateSplit } from "@splitpay/split-engine";
 import { QuantityStepper } from "./quantity-stepper";
 import { getSessionId } from "@/lib/guest-session";
 import {
@@ -244,7 +244,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     return (
       <section className="screen">
         <header className="split-header">
-          <p className="eyebrow">AddaSplit</p>
+          <p className="eyebrow">SplitPay</p>
           <button className="text-button back-button" onClick={() => setStage("claim")}>← Edit items</button>
           <h1>Confirm your share</h1>
           <p>Tell your friends whose items these are.</p>
@@ -361,7 +361,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     return (
       <section className="screen">
         <header className="split-header">
-          <p className="eyebrow">{split.split.restaurantName || "AddaSplit"}</p>
+          <p className="eyebrow">{split.split.restaurantName || "SplitPay"}</p>
           <h1>Nothing to claim yet</h1>
           <p>{hostName} hasn’t added any items to this bill. Ask them to finish it, then reopen this link.</p>
         </header>

@@ -1,6 +1,6 @@
 {
-  "name": "AddaSplit",
-  "short_name": "AddaSplit",
+  "name": "SplitPay",
+  "short_name": "SplitPay",
   "description": "Good food. Fair splits.",
   "start_url": "/",
   "scope": "/",

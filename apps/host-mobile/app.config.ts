@@ -8,11 +8,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   }
   return {
     ...config,
-    name: production ? 'AddaSplit' : 'AddaSplit Preview',
-    slug: 'addasplit',
+    name: production ? 'SplitPay' : 'SplitPay Preview',
+    slug: 'splitpay',
     ios: {
       ...config.ios,
-      bundleIdentifier: bundleIdentifier ?? 'dev.addasplit.preview',
+      bundleIdentifier: bundleIdentifier ?? 'dev.splitpay.preview',
       supportsTablet: false,
     },
   };

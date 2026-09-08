@@ -1,4 +1,4 @@
--- AddaSplit demo seed. Creates one real host account and one shareable bill so
+-- SplitPay demo seed. Creates one real host account and one shareable bill so
 -- the guest flow can be exercised end to end before real host accounts exist.
 --
 -- SECURITY: replace CHANGE_ME below before running, and put the same value in

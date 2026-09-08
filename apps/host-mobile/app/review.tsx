@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { calculateSplit } from '@addasplit/split-engine';
+import { calculateSplit } from '@splitpay/split-engine';
 import { Button, Heading, Page, Surface, Toolbar, taka, ui } from '../components/ui';
 import { Icon } from '../components/icon';
 import { useTheme } from '../components/theme';

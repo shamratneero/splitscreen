@@ -1,5 +1,5 @@
 {
-  "name": "addasplit",
+  "name": "splitpay",
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.18.3",
@@ -8,11 +8,11 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "corepack pnpm --filter @addasplit/split-engine test && corepack pnpm --filter @addasplit/receipt-parser test",
-    "typecheck": "corepack pnpm --filter @addasplit/split-engine typecheck && corepack pnpm --filter @addasplit/guest-web typecheck && corepack pnpm --filter @addasplit/host-mobile typecheck && corepack pnpm --filter @addasplit/receipt-parser typecheck",
-    "dev:guest": "corepack pnpm --filter @addasplit/guest-web dev",
-    "dev:host": "corepack pnpm --filter @addasplit/host-mobile start",
-    "dev:host:web": "corepack pnpm --filter @addasplit/host-mobile web",
+    "test": "corepack pnpm --filter @splitpay/split-engine test && corepack pnpm --filter @splitpay/receipt-parser test",
+    "typecheck": "corepack pnpm --filter @splitpay/split-engine typecheck && corepack pnpm --filter @splitpay/guest-web typecheck && corepack pnpm --filter @splitpay/host-mobile typecheck && corepack pnpm --filter @splitpay/receipt-parser typecheck",
+    "dev:guest": "corepack pnpm --filter @splitpay/guest-web dev",
+    "dev:host": "corepack pnpm --filter @splitpay/host-mobile start",
+    "dev:host:web": "corepack pnpm --filter @splitpay/host-mobile web",
     "test:host:web": "playwright test"
   },
   "devDependencies": {

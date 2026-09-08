@@ -13,7 +13,7 @@ export default async function PublicSplitPage({ params }: { params: Promise<{ to
       <main className="app-shell">
         <section className="screen">
           <header className="split-header">
-            <p className="eyebrow">AddaSplit</p>
+            <p className="eyebrow">SplitPay</p>
             <h1>Backend not configured</h1>
             <p>
               Set <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{" "}
@@ -38,7 +38,7 @@ export default async function PublicSplitPage({ params }: { params: Promise<{ to
       <main className="app-shell">
         <section className="screen">
           <header className="split-header">
-            <p className="eyebrow">AddaSplit</p>
+            <p className="eyebrow">SplitPay</p>
             <h1>Couldn’t load this split</h1>
             <p>{loadError}</p>
           </header>
@@ -52,7 +52,7 @@ export default async function PublicSplitPage({ params }: { params: Promise<{ to
       <main className="app-shell">
         <section className="screen">
           <header className="split-header">
-            <p className="eyebrow">AddaSplit</p>
+            <p className="eyebrow">SplitPay</p>
             <h1>This link isn’t active</h1>
             <p>Ask the host to share the bill again.</p>
           </header>

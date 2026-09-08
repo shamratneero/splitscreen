@@ -14,7 +14,7 @@ importers:
 
   apps/guest-web:
     dependencies:
-      '@addasplit/split-engine':
+      '@splitpay/split-engine':
         specifier: workspace:*
         version: link:../../packages/split-engine
       '@supabase/supabase-js':
@@ -45,18 +45,18 @@ importers:
 
   apps/host-mobile:
     dependencies:
-      '@addasplit/receipt-parser':
-        specifier: workspace:*
-        version: link:../../packages/receipt-parser
-      '@addasplit/split-engine':
-        specifier: workspace:*
-        version: link:../../packages/split-engine
       '@expo/metro-runtime':
         specifier: ~6.1.2
         version: 6.1.2(expo@54.0.37)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       '@react-native-async-storage/async-storage':
         specifier: ^2.2.0
         version: 2.2.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))
+      '@splitpay/receipt-parser':
+        specifier: workspace:*
+        version: link:../../packages/receipt-parser
+      '@splitpay/split-engine':
+        specifier: workspace:*
+        version: link:../../packages/split-engine
       '@supabase/supabase-js':
         specifier: ^2.115.0
         version: 2.115.0
