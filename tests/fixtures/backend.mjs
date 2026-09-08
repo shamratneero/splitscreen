@@ -30,7 +30,7 @@ createServer(async (req, res) => {
   if (url.pathname === '/rest/v1/profiles') return send(profile);
   if (url.pathname === '/rest/v1/splits') {
     if (req.method === 'POST') {
-      split = { ...body, id: 'test-split', public_token: 'test-public-token', split_date: '2026-09-07', items: [] };
+      split = { ...body, id: 'test-split', public_token: '00000000-0000-4000-8000-000000000002', split_date: '2026-09-07', items: [] };
       return send({ id: split.id, public_token: split.public_token });
     }
     const row = split && { ...split, guests: guests.map(guest => ({

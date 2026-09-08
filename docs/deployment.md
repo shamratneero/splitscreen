@@ -31,11 +31,12 @@ The guest app is a normal Next.js app, so Vercel hosts it on the free tier.
 2. At [vercel.com/new](https://vercel.com/new), import the repository.
 3. **Set Root Directory to `apps/guest-web`.** This is the only non-obvious
    step — without it Vercel builds the monorepo root and fails.
-4. Add these Environment Variables, matching `apps/guest-web/.env.local`:
+4. Add two Environment Variables, matching `apps/guest-web/.env.local`:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `ANTHROPIC_API_KEY` — **secret**, powers `/api/scan-receipt`. Never give it
-     a `NEXT_PUBLIC_` prefix; that ships your key to every visitor's browser.
+
+   Both are public by design; the anon key is protected by RLS. There is no
+   secret to set — receipt scanning runs in the host's browser, not on a server.
 5. Deploy. You get something like `https://addasplit.vercel.app`.
 
 Then point the host app at it and restart Expo:
@@ -51,19 +52,46 @@ security-definer RPCs.
 
 `apps/guest-web/vercel.json` already carries the pnpm-workspace build commands.
 
-## 3. The host app — free on the web, or paid on the App Store
+## 3. The host app on Vercel (second project, same repo)
 
-**The whole product ships for $0.** Guests never install anything by design,
-and the host app exports to a static site too:
+**The whole product ships for $0.** Guests never install anything by design, and
+the host app is a static site — receipt scanning runs in the browser, so there
+is no server and no API key.
 
-```bash
-corepack pnpm --filter @addasplit/host-mobile build:web   # -> apps/host-mobile/dist
-```
+The two apps are **two Vercel projects pointed at the same repository**, each
+with its own Root Directory. Vercel allows this; the Root Directory is what
+keeps them apart.
 
-That is a ~1.5 MB SPA. Deploy `dist/` to Vercel, Netlify, or any static host —
-just add a rewrite sending all paths to `index.html`, or client-side routes like
-`/track/<id>` 404 on refresh. Hosts can then *Add to Home Screen* for a
-full-screen, own-icon install with no app store involved.
+1. At [vercel.com/new](https://vercel.com/new), import the **same** repository
+   a second time.
+2. **Set Root Directory to `apps/host-mobile`.**
+3. Leave the build settings alone — `apps/host-mobile/vercel.json` already
+   carries the install/build commands, the `dist` output directory, and the SPA
+   rewrite that keeps `/track/<id>` working on refresh.
+4. Add one Environment Variable:
+   - `EXPO_PUBLIC_GUEST_URL` — the guest app's deployed URL, so shared QR codes
+     point at it rather than `localhost`.
+5. Deploy, then set the same value in `apps/host-mobile/.env.local` for local runs.
+
+Hosts can *Add to Home Screen* for a full-screen, own-icon install — the
+`manifest.webmanifest` and icon are already in `public/`.
+
+### Why the build is ~56 MB
+
+`build:web` runs `scripts/prepare-ocr.mjs`, which copies the Tesseract WASM
+cores and the English and Bengali training data out of `node_modules` into
+`public/ocr/`. Those files are **generated, not committed** (`.gitignore` skips
+`public/ocr/`, `.vercelignore` skips it on upload), so the build regenerates
+them every time — nothing is fetched from the network at build or run time.
+
+All WASM core variants ship because Tesseract picks one at runtime based on the
+browser's SIMD support; the visitor downloads only the one they need, plus the
+language data.
+
+The `vercel.json` route returning 404 for missing `/ocr/*` paths is deliberate:
+without it, a missing asset would fall through to the SPA rewrite and return
+`index.html`, and the WASM loader would fail with a confusing parse error
+instead of an honest 404.
 
 What the web build costs you: the native Liquid Glass rendering falls back to a
 CSS blur, and there is no App Store listing.

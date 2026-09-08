@@ -57,7 +57,9 @@ test('host signs in, creates a split, and confirms an anonymous guest payment', 
   try {
     const guest = await guestContext.newPage();
     captureErrors(guest, errors);
-    await guest.goto('http://127.0.0.1:3002/s/test-public-token');
+    await guest.route('**/fonts.googleapis.com/**', route => route.abort());
+    await guest.goto('http://127.0.0.1:3002/s/00000000-0000-4000-8000-000000000002');
+    await expect(guest.locator('.bottom-bar')).toHaveCSS('position', 'fixed');
     const claimResponse = guest.waitForResponse(response => response.url().includes('/rpc/set_claim'), { timeout: 10_000 });
     await guest.getByRole('button', { name: 'Add Beef Biryani', exact: true }).click();
     expect((await claimResponse).ok()).toBe(true);
@@ -92,4 +94,59 @@ test('host signs in, creates a split, and confirms an anonymous guest payment', 
   } finally {
     await guestContext.close();
   }
+});
+
+
+test('invalid guest links show a styled recovery message', async ({ page }) => {
+  await page.goto('http://127.0.0.1:3002/s/demo-sultans-dine');
+  await expect(page.getByRole('heading', { name: 'This link isn’t active' })).toBeVisible();
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(248, 249, 247)');
+});
+
+test('receipt photo is read locally and must be reviewed before sharing', async ({ page }, testInfo) => {
+  test.setTimeout(150_000);
+  const uploads: string[] = [];
+  const errors: string[] = [];
+  captureErrors(page, errors);
+  page.on('request', request => {
+    if (request.method() === 'POST' && request.url().includes('/api/scan-receipt')) uploads.push(request.url());
+  });
+  await page.route('**/*', route => {
+    const hostname = new URL(route.request().url()).hostname;
+    return hostname === '127.0.0.1' || hostname === 'localhost' ? route.continue() : route.abort();
+  });
+  await page.goto('/');
+  await page.getByRole('textbox', { name: 'Email', exact: true }).fill('host@example.test');
+  await page.getByLabel('Password', { exact: true }).fill('test-password');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Scan receipt', exact: true })).toBeVisible();
+  const receipt = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1100; canvas.height = 750;
+    const context = canvas.getContext('2d')!;
+    context.fillStyle = '#fff'; context.fillRect(0, 0, 1100, 750);
+    context.fillStyle = '#000'; context.font = '36px monospace';
+    ['TEST KITCHEN', '', 'Item          Qty   Rate   Amount', 'Biryani       2     100    200', '', 'Subtotal                  200', 'VAT                       20', 'Grand Total               220'].forEach((line, i) => context.fillText(line, 60, 80 + i * 70));
+    return canvas.toDataURL('image/png').split(',')[1]!;
+  });
+  await page.getByRole('button', { name: 'Scan receipt', exact: true }).click();
+  const picker = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Choose from library' }).click();
+  await (await picker).setFiles({ name: 'receipt.png', mimeType: 'image/png', buffer: Buffer.from(receipt, 'base64') });
+  await expect(page.getByText('Review the scan', { exact: true })).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByLabel('Restaurant name')).toHaveValue('TEST KITCHEN');
+  await expect(page.getByLabel('Item 1 unit price')).toHaveValue('100');
+  await expect(page.getByLabel('Receipt total')).toHaveValue('220');
+  await expect(page.getByRole('button', { name: 'Create split', exact: true })).toBeDisabled();
+  await page.getByRole('checkbox', { name: 'I checked the scan against my receipt' }).click();
+  await expect(page.getByRole('button', { name: 'Create split', exact: true })).toBeEnabled();
+  expect(uploads).toEqual([]);
+  // The bundled Tesseract 4 language data contains two retired engine settings.
+  // Tesseract 5 reports these harmless compatibility notices on stderr.
+  const knownModelNotices = new Set([
+    'Warning: Parameter not found: segsearch_max_futile_classifications',
+    'Warning: Parameter not found: classify_misfit_junk_penalty',
+  ]);
+  expect(errors.filter(error => !knownModelNotices.has(error))).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath('receipt-ocr-review.png'), fullPage: true });
 });

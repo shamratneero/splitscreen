@@ -1,0 +1,16 @@
+.git
+.claude
+node_modules
+**/node_modules
+.env*
+**/.env*
+.next
+**/.next
+**/.next-dev
+**/.next-test
+**/.expo
+**/dist
+**/public/ocr
+**/*.tsbuildinfo
+test-results
+playwright-report

@@ -1,8 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap');
-
 :root { --green:#0f7a4b; --ink:#18211d; --muted:#68716c; --line:#e5e9e5; --canvas:#f8f9f7; --surface:#fff; color-scheme:light; }
 * { box-sizing:border-box; }
-html, body { margin:0; background:var(--canvas); color:var(--ink); font-family:"Noto Sans Bengali","Noto Sans",system-ui,sans-serif; }
+html, body { margin:0; background:var(--canvas); color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Bengali",sans-serif; }
 button, input { font:inherit; } button { cursor:pointer; } button:disabled { cursor:not-allowed; opacity:.45; }
 .app-shell, .welcome { width:min(100%, 480px); min-height:100dvh; margin:0 auto; background:var(--surface); }
 .screen { min-height:100dvh; padding:32px 16px 118px; }

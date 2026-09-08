@@ -1,5 +1,7 @@
 node_modules
 .next
+.next-dev
+.next-test
 dist
 .expo
 .env
@@ -20,3 +22,7 @@ apps/host-mobile/android
 
 # Generated paste-into-SQL-editor bundle; regenerate from migrations.
 supabase/setup/all.sql
+
+# OCR runtime/model assets are copied from locked dependencies before building.
+apps/host-mobile/public/ocr/
+.vercel/

@@ -30,6 +30,8 @@ export type PaymentStatus = "UNPAID" | "GUEST_REPORTED" | "CONFIRMED" | "FAILED"
  * the payload identify which guest row belongs to this browser.
  */
 export async function fetchPublicSplit(token: string, sessionId?: string | null): Promise<PublicSplit | null> {
+  // Public tokens are UUIDs; malformed links should show the inactive-link UI.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) return null;
   const { data, error } = await supabase.rpc("get_public_split", {
     p_token: token,
     p_session_id: sessionId ?? null,

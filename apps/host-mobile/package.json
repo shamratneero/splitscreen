@@ -5,20 +5,23 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "web": "expo start --web",
-    "build:web": "expo export --platform web",
+    "web": "node scripts/prepare-ocr.mjs && expo start --web",
+    "build:web": "node scripts/prepare-ocr.mjs && expo export --platform web && node scripts/finalize-web.mjs",
     "build:ios:js": "expo export --platform ios",
     "prebuild:ios": "expo prebuild --platform ios --no-install",
     "ios:native": "expo run:ios",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare:ocr": "node scripts/prepare-ocr.mjs"
   },
   "dependencies": {
     "@addasplit/split-engine": "workspace:*",
     "@expo/metro-runtime": "~6.1.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@supabase/supabase-js": "^2.115.0",
+    "@tesseract.js-data/ben": "^1.0.0",
+    "@tesseract.js-data/eng": "^1.0.0",
     "expo": "~54.0.0",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.14",
@@ -35,12 +38,17 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
-    "react-native-web": "~0.21.0"
+    "react-native-web": "~0.21.0",
+    "tesseract.js": "^7.0.0",
+    "@addasplit/receipt-parser": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",
     "@types/react": "~19.1.10",
     "@types/react-dom": "~19.1.9",
     "typescript": "~5.9.2"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

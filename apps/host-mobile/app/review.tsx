@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { calculateSplit } from '@addasplit/split-engine';
@@ -9,6 +9,7 @@ import { useDraft, type DraftItem } from '../state/draft';
 
 const money = (value: string) => /^\d+$/.test(value) && Number.isSafeInteger(Number(value)) ? Number(value) : null;
 export default function ReviewScreen() {
+  const [showScanText, setShowScanText] = useState(false);
   const { colors } = useTheme();
   const { draft, update } = useDraft();
   const router = useRouter();
@@ -23,8 +24,18 @@ export default function ReviewScreen() {
   const edit = (id: string, patch: Partial<DraftItem>) => update({ items: draft.items.map(item => item.id === id ? { ...item, ...patch } : item) });
   const inputStyle = { color: colors.ink, backgroundColor: colors.input, borderRadius: 10, minHeight: 44, paddingHorizontal: 12, fontSize: 15 };
 
-  return <Page header={<Toolbar onBack={() => router.back()} title="New split" />} footer={<Button title="Create split" onPress={() => router.push('/share')} disabled={!result?.reconciled} />}>
+  return <Page header={<Toolbar onBack={() => router.back()} title="New split" />} footer={<Button title="Create split" onPress={() => router.push('/share')} disabled={!result?.reconciled || (Boolean(draft.scanText) && !draft.scanReviewed)} />}>
     <Heading title="Enter the bill" subtitle="Check the items and total before sharing." />
+    {draft.scanText ? <Surface style={{ marginBottom: 20, gap: 10 }}>
+      <Text style={{ color: colors.ink, fontWeight: '600' }}>Review the scan</Text>
+      <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>Check every item, quantity and amount against your receipt.</Text>
+      {draft.scanWarnings?.map((warning, index) => <Text key={index} style={{ color: colors.amber, fontSize: 13, lineHeight: 19 }}>{warning}</Text>)}
+      <Pressable accessibilityRole="button" onPress={() => setShowScanText(!showScanText)} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: colors.primary }}>{showScanText ? 'Hide extracted text' : 'Show extracted text'}</Text></Pressable>
+      {showScanText ? <Text selectable style={{ color: colors.muted, fontSize: 12, lineHeight: 19 }}>{draft.scanText}</Text> : null}
+      <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: Boolean(draft.scanReviewed) }} accessibilityLabel="I checked the scan against my receipt" onPress={() => update({ scanReviewed: !draft.scanReviewed })} style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Text style={{ color: colors.primary, fontSize: 20 }}>{draft.scanReviewed ? '☑' : '☐'}</Text><Text style={{ color: colors.ink, fontSize: 13, flex: 1 }}>I checked the scan against my receipt</Text>
+      </Pressable>
+    </Surface> : null}
     <Surface style={{ marginBottom: 26 }}><Text style={{ color: colors.muted, fontSize: 12, marginBottom: 8 }}>Restaurant</Text><TextInput accessibilityLabel="Restaurant name" placeholder="Restaurant name" placeholderTextColor={colors.muted} style={[inputStyle, { fontWeight: '600' }]} value={draft.restaurant} onChangeText={restaurant => update({ restaurant })} /></Surface>
     <View style={[ui.row, { marginBottom: 12 }]}><Text style={[ui.section, { color: colors.ink, marginBottom: 0 }]}>Items</Text><Text style={{ color: colors.muted, fontSize: 12 }}>Quantity × unit price</Text></View>
     <Surface style={{ padding: 0, overflow: 'hidden' }}>

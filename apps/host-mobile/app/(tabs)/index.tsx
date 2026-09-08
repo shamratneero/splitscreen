@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Heading, Page, Toolbar, ui } from '../../components/ui';
@@ -14,8 +14,11 @@ export default function HomeScreen() {
   const { update } = useDraft();
   const [capture, setCapture] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const scanController = useRef<AbortController | null>(null);
+  useEffect(() => () => scanController.current?.abort(), []);
+  const [scanProgress, setScanProgress] = useState('Loading the scanner…');
   const [scanError, setScanError] = useState<string | null>(null);
-  const start = () => { setCapture(false); update({ started: true }); router.push('/review'); };
+  const start = () => { setCapture(false); update({ started: true, scanText: undefined, scanWarnings: undefined, scanReviewed: true }); router.push('/review'); };
 
   /**
    * Scanning fills the draft and drops the host on the review screen, where
@@ -28,9 +31,16 @@ export default function HomeScreen() {
       const photo = await captureReceipt(source);
       if (!photo) return;
       setScanning(true);
-      const receipt = await scanReceipt(photo.base64, photo.mediaType);
+      setScanProgress('Loading the scanner…');
+      const controller = new AbortController();
+      scanController.current = controller;
+      const receipt = await scanReceipt(photo.base64, photo.mediaType, setScanProgress, controller.signal);
+      if (controller.signal.aborted) return;
       update({
         started: true,
+        scanText: receipt.rawText,
+        scanWarnings: receipt.warnings,
+        scanReviewed: false,
         restaurant: receipt.restaurantName,
         items: receipt.items,
         vat: String(receipt.vat),
@@ -53,18 +63,18 @@ export default function HomeScreen() {
       <View style={{ gap: 10, marginTop: 12 }}><Button title="Scan receipt" icon="camera" onPress={() => setCapture(true)} /><Button title="Enter manually" secondary onPress={start} /></View>
       <Text style={{ textAlign: 'center', fontSize: 12, color: colors.muted, marginTop: 20 }}>Your friends join in their browser.</Text>
     </View>
-    <Modal visible={capture} transparent animationType="slide" onRequestClose={() => setCapture(false)}>
+    <Modal visible={capture} transparent animationType="slide" onRequestClose={() => { scanController.current?.abort(); setCapture(false); }}>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(12,30,20,.35)' }}>
         <GlassSurface accessibilityViewIsModal style={{ padding: 28, paddingBottom: 40, gap: 16, maxWidth: 480, width: '100%', alignSelf: 'center' }}>
-          <View style={ui.row}><Text style={[ui.section, { color: colors.ink }]}>Scan a receipt</Text><Pressable accessibilityRole="button" disabled={scanning} onPress={() => { setCapture(false); setScanError(null); }} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: colors.primary }}>Dismiss</Text></Pressable></View>
+          <View style={ui.row}><Text style={[ui.section, { color: colors.ink }]}>Scan a receipt</Text><Pressable accessibilityRole="button" onPress={() => { scanController.current?.abort(); setCapture(false); setScanError(null); }} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: colors.primary }}>{scanning ? 'Cancel' : 'Dismiss'}</Text></Pressable></View>
           {scanning ? (
             <View style={{ paddingVertical: 22, alignItems: 'center', gap: 12 }}>
               <ActivityIndicator color={colors.primary} />
-              <Text style={{ color: colors.muted, fontSize: 13 }}>Reading your receipt…</Text>
+              <Text style={{ color: colors.muted, fontSize: 13 }} accessibilityLiveRegion="polite">{scanProgress}</Text>
             </View>
           ) : (
             <>
-              <Text style={[ui.description, { color: colors.muted }]}>Photograph the whole bill, flat and well lit. You can fix anything it misreads on the next screen.</Text>
+              <Text style={[ui.description, { color: colors.muted }]}>Photograph the whole bill, flat and well lit. Scanning stays on this device. You’ll review the result before sharing.</Text>
               <Button title="Take a photo" icon="camera" onPress={() => scan('camera')} />
               <Button title="Choose from library" secondary onPress={() => scan('library')} />
               {scanError ? <Text accessibilityLiveRegion="polite" style={{ color: colors.amber, fontSize: 13, lineHeight: 19 }}>{scanError}</Text> : null}
