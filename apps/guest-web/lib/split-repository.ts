@@ -8,6 +8,7 @@ export type PublicSplit = {
     restaurantName: string;
     splitDate: string;
     status: string;
+    currency: string;
     vat: number;
     serviceCharge: number;
     discount: number;
@@ -15,6 +16,8 @@ export type PublicSplit = {
     hostDisplayName: string | null;
     hostBkash: string | null;
     hostNagad: string | null;
+    /** Labelled handles (bKash, UPI, PayNow…) that replace the fixed pair. */
+    paymentHandles: { label: string; handle: string }[];
   };
   items: SplitItem[];
   claims: SplitClaim[];

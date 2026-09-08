@@ -5,8 +5,15 @@ import * as Haptics from 'expo-haptics';
 import { GlassSurface } from './glass-surface';
 import { Icon, type IconName } from './icon';
 import { useTheme } from './theme';
+import { DEFAULT_CURRENCY, formatMoney } from '@splitpay/types';
 
-export const taka = (amount: number) => `৳${amount.toLocaleString('en-BD')}`;
+/**
+ * Formats an integer minor-unit amount in the given currency, defaulting to the
+ * host's own. Kept named `taka` because that is what every caller reads as, but
+ * it is no longer taka-only — the shared money module decides symbol, decimals
+ * and whether digits group by lakh or by thousand.
+ */
+export const taka = (amount: number, currency: string = DEFAULT_CURRENCY) => formatMoney(amount, currency);
 export function Page({ children, header, footer, tabs = false }: PropsWithChildren<{ header?: ReactNode; footer?: ReactNode; tabs?: boolean }>) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();

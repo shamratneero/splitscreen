@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { calculateSplit } from "@splitpay/split-engine";
+import { formatMoney } from "@splitpay/types";
 import { QuantityStepper } from "./quantity-stepper";
 import { getSessionId } from "@/lib/guest-session";
 import {
@@ -14,16 +15,12 @@ import {
 
 type Stage = "claim" | "confirm" | "pay" | "done";
 /**
- * Grouped by hand for the same reason as the date: prices render on the server
- * and again in the guest's browser, and toLocaleString("en-BD") is not
- * guaranteed to group identically in both (lakh vs thousand separators), which
- * fails hydration.
+ * Every amount is an integer count of the currency's smallest unit, formatted
+ * by the shared money module so the host app, the guest page and the server
+ * render identically — and so lakh grouping follows the currency rather than a
+ * locale guess that differs across the SSR boundary.
  */
-const taka = (value: number) => {
-  const sign = value < 0 ? "-" : "";
-  const digits = String(Math.abs(Math.round(value)));
-  return `${sign}৳${digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
-};
+const money = (value: number, currency: string) => formatMoney(value, currency);
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -45,6 +42,9 @@ const formatSplitDate = (value: string) => {
 
 export function ClaimExperience({ token, initialSplit }: { token: string; initialSplit: PublicSplit }) {
   const [split, setSplit] = useState<PublicSplit>(initialSplit);
+  // Every amount on this page belongs to the split's own currency, not the
+  // viewer's locale — a guest abroad still owes taka.
+  const currencyCode = split.split.currency ?? "BDT";
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("claim");
   const [name, setName] = useState("");
@@ -255,19 +255,19 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
         </label>
         <div className="summary">
           <span>{hasUnclaimed ? "Your estimated share" : "You’ll pay"}</span>
-          <strong>{taka(myTotals.total)}</strong>
+          <strong>{money(myTotals.total, currencyCode)}</strong>
           <dl>
-            <div><dt>Items</dt><dd>{taka(myTotals.itemSubtotal)}</dd></div>
-            {myTotals.vat > 0 ? <div><dt>VAT</dt><dd>{taka(myTotals.vat)}</dd></div> : null}
-            {myTotals.serviceCharge > 0 ? <div><dt>Service charge</dt><dd>{taka(myTotals.serviceCharge)}</dd></div> : null}
-            {myTotals.discount > 0 ? <div><dt>Discount</dt><dd>−{taka(myTotals.discount)}</dd></div> : null}
+            <div><dt>Items</dt><dd>{money(myTotals.itemSubtotal, currencyCode)}</dd></div>
+            {myTotals.vat > 0 ? <div><dt>VAT</dt><dd>{money(myTotals.vat, currencyCode)}</dd></div> : null}
+            {myTotals.serviceCharge > 0 ? <div><dt>Service charge</dt><dd>{money(myTotals.serviceCharge, currencyCode)}</dd></div> : null}
+            {myTotals.discount > 0 ? <div><dt>Discount</dt><dd>−{money(myTotals.discount, currencyCode)}</dd></div> : null}
           </dl>
         </div>
         {estimateNote}
         {banner}
         <footer className="bottom-bar">
           <button className="button" disabled={!name.trim() || itemCount === 0 || busy} onClick={submitName}>
-            {busy ? "Saving…" : `Confirm ${taka(myTotals.total)}`}
+            {busy ? "Saving…" : `Confirm ${money(myTotals.total, currencyCode)}`}
           </button>
         </footer>
       </section>
@@ -284,7 +284,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
 
         <div className="send-card">
           <span className="send-label">Send</span>
-          <strong className="pay-amount">{taka(myTotals.total)}</strong>
+          <strong className="pay-amount">{money(myTotals.total, currencyCode)}</strong>
           <span className="send-label">to {hostName}</span>
           <button className="text-button" onClick={() => copyValue(String(myTotals.total), "Amount copied")}>
             Copy amount
@@ -337,7 +337,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
         </p>
         <div className="summary">
           <span>Total</span>
-          <strong>{taka(myTotals.total)}</strong>
+          <strong>{money(myTotals.total, currencyCode)}</strong>
           {confirmed ? (
             <p className="quiet settled">{hostName} confirmed they received your money.</p>
           ) : (
@@ -419,7 +419,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
             <div>
               <h2>{item.name}</h2>
               <p>
-                {taka(item.unitPrice)} ·{" "}
+                {money(item.unitPrice, currencyCode)} ·{" "}
                 {left === 0 && mine === 0 ? "all claimed" : `${left - mine} left`}
               </p>
             </div>
@@ -439,7 +439,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
       <footer className="bottom-bar">
         <div>
           <span>{itemCount ? `${itemCount} ${itemCount === 1 ? "item" : "items"} selected` : "Choose your items"}</span>
-          <strong>{taka(myTotals.total)}</strong>
+          <strong>{money(myTotals.total, currencyCode)}</strong>
         </div>
         <button className="button compact" disabled={itemCount === 0 || busy} onClick={() => setStage("confirm")}>
           Continue

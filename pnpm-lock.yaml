@@ -17,6 +17,9 @@ importers:
       '@splitpay/split-engine':
         specifier: workspace:*
         version: link:../../packages/split-engine
+      '@splitpay/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@supabase/supabase-js':
         specifier: ^2.115.0
         version: 2.115.0
@@ -57,6 +60,9 @@ importers:
       '@splitpay/split-engine':
         specifier: workspace:*
         version: link:../../packages/split-engine
+      '@splitpay/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@supabase/supabase-js':
         specifier: ^2.115.0
         version: 2.115.0
@@ -152,7 +158,14 @@ importers:
         specifier: ^3.0.7
         version: 3.2.7(@types/node@22.20.1)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.0)
 
-  packages/types: {}
+  packages/types:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.7
+        version: 3.2.7(@types/node@22.20.1)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.0)
 
   packages/ui: {}
 

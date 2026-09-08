@@ -40,7 +40,8 @@
     "react-native-svg": "15.12.1",
     "react-native-web": "~0.21.0",
     "tesseract.js": "^7.0.0",
-    "@splitpay/receipt-parser": "workspace:*"
+    "@splitpay/receipt-parser": "workspace:*",
+    "@splitpay/types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",
