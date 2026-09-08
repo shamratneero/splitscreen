@@ -29,10 +29,13 @@ describe('receipt suggestions', () => {
     expect(result.items[0]).toMatchObject({ name: 'Rice (3 units)', quantity: 1, price: 100 });
     expect(result.warnings.join(' ')).toContain('one group');
   });
-  it('flags decimals rather than silently rounding money', () => {
+  it('rounds decimals to whole taka and says so, rather than dropping the item', () => {
+    // Refusing decimals dropped nearly every real item: Bangladeshi receipts
+    // carry them wherever VAT is applied.
     const result = parseReceipt('Rice 1 99.50\nTotal 99.50');
-    expect(result.items).toHaveLength(0);
-    expect(result.warnings.join(' ')).toContain('whole taka');
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({ quantity: 1, price: 100 });
+    expect(result.warnings.join(' ')).toContain('rounded to whole taka');
   });
   it('does not confuse a tax percentage with a money amount', () => {
     const result = parseReceipt('Rice 100\nVAT 15%\nTotal 115');
@@ -47,5 +50,57 @@ describe('receipt suggestions', () => {
   });
   it('handles blank input without producing fake items', () => {
     expect(parseReceipt('').items).toEqual([]);
+  });
+});
+
+describe('a real Dhaka cafe receipt', () => {
+  // Cafe Arabika, Merul Badda — transcribed from a photo the parser got wrong.
+  // Everything above the "Qty Item Name" header is shop metadata, and the one
+  // real item is priced in decimals, which the parser used to reject outright.
+  const RECEIPT = [
+    'CAFE ARABIKA LIMITED',
+    'Brac University,Pragati Sharani,KHA-224',
+    'Merul Badda,Dhaka-1212',
+    'Contact:+8801329684351',
+    'BIN:005484628-0101 ; Mushak:6.3',
+    'Token Number:70',
+    'Date:07-Sep-26     Time:6:49 PM',
+    'Number Of Guests:0    Invoice No:BRAC10018',
+    '--Qty Item Name      Price  T.Price',
+    '-1 Tart of Arabika   228.57  228.57',
+    'GROSS Total:                 228.57',
+    '-Discount15.00%:             -34.29',
+    '-VAT5.00%:                     9.71',
+    'Total Payment:               204.00',
+    'Payments:',
+    '-Cash;                       204.00',
+    '-TOTAL PAYMENT:              500.00',
+    '-RETURNED AMOUNT:            296.00',
+    'THANK YOU,COME AGAIN',
+    'Powered by:3S',
+    'www.3ssoftltd.com, 01329692488',
+  ].join('\n');
+
+  it('takes the shop name but never its address or token number as items', () => {
+    const result = parseReceipt(RECEIPT);
+    const names = result.items.map(item => item.name).join(' | ');
+    expect(names).not.toMatch(/Brac University|Merul Badda|Token Number|GROSS|RETURNED|Cash/i);
+    expect(result.restaurantName).toBe('CAFE ARABIKA LIMITED');
+  });
+
+  it('finds the one real item at its decimal price, rounded to whole taka', () => {
+    const result = parseReceipt(RECEIPT);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({ name: 'Tart of Arabika', quantity: 1, price: 229 });
+  });
+
+  it('reads percentage-labelled discount and VAT by their printed amounts', () => {
+    const result = parseReceipt(RECEIPT);
+    expect(result.discount).toBe(34);
+    expect(result.vat).toBe(10);
+  });
+
+  it('takes the amount payable, not the cash tendered or the change', () => {
+    expect(parseReceipt(RECEIPT).receiptTotal).toBe(204);
   });
 });
