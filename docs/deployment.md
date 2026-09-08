@@ -129,3 +129,54 @@ The prototype takes shortcuts that must not ship:
   prototyping.
 - Guests currently refresh on interaction. Supabase Realtime is already in the
   schema if live updates are wanted.
+
+## 5. Packaging for an iPhone
+
+Two different things are called "an iOS app", and they cost very differently.
+
+### Install from the browser (free, works today)
+
+The deployed host app is a PWA. On the iPhone, open it in **Safari** (not
+Chrome — only Safari can install to the home screen), tap Share, then **Add to
+Home Screen**. It gets its own icon, launches without browser chrome, and
+**receipt scanning still works**, because it is the same web build.
+
+The tags that make this work are injected by `scripts/finalize-web.mjs`. The
+one that matters is `apple-touch-icon`: iOS ignores the web manifest's icons
+entirely, and without a PNG at that link it saves a screenshot of the page
+instead of an app icon.
+
+### A real installable build (needs Apple)
+
+`eas.json` and `app.config.ts` are ready — app icon, camera and photo-library
+usage descriptions, bundle identifier from the environment. Verify the native
+project generates at any time:
+
+```bash
+cd apps/host-mobile
+IOS_BUNDLE_IDENTIFIER=com.yourcompany.splitsave APP_VARIANT=production \
+  npx expo prebuild --platform ios --no-install --clean
+```
+
+`ios/` is generated, gitignored, and safe to delete. Then build in the cloud —
+no local Xcode required:
+
+```bash
+npx eas build --platform ios --profile production
+npx eas submit --platform ios
+```
+
+This needs an Apple Developer account ($99/yr) for TestFlight or the App Store.
+
+**Scanning does not work in a packaged build.** The scanner is Tesseract
+compiled to WebAssembly driven by a web worker; a React Native runtime has
+neither. `scanningAvailable` is false there, so the home screen offers manual
+entry rather than a camera button that fails after the photo is taken. Giving
+the packaged app its own scanner means either Apple's Vision framework through
+a native module, or hosting the web scanner in a WebView.
+
+### Both at once
+
+Nothing here affects Vercel. `build:web` is unchanged, the OCR assets still
+ship, and the two apps deploy exactly as before — the native configuration only
+matters when `expo prebuild` or `eas build` runs.

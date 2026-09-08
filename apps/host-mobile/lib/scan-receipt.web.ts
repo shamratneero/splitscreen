@@ -1,6 +1,9 @@
 import { parseReceipt, type ParsedReceipt } from '@splitsave/receipt-parser';
 import type { Worker } from 'tesseract.js';
 export type { CaptureSource } from './capture-receipt';
+
+/** The web build carries the WebAssembly scanner, so scanning is available. */
+export const scanningAvailable = true;
 export type { ParsedReceipt as ScannedReceipt } from '@splitsave/receipt-parser';
 import type { CaptureSource } from './capture-receipt';
 

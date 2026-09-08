@@ -6,7 +6,7 @@ import { GlassSurface } from '../../components/glass-surface';
 import { Icon } from '../../components/icon';
 import { useTheme } from '../../components/theme';
 import { useDraft } from '../../state/draft';
-import { captureReceipt, scanReceipt, type CaptureSource } from '../../lib/scan-receipt';
+import { captureReceipt, scanningAvailable, scanReceipt, type CaptureSource } from '../../lib/scan-receipt';
 import { fetchSplitHistory, outstandingTotal, type SplitSummary } from '../../lib/split-history';
 import { useAuth } from '../../state/auth';
 
@@ -105,10 +105,19 @@ export default function HomeScreen() {
       <Surface style={{ gap: 14 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 2 }}>
           <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.soft, alignItems: 'center', justifyContent: 'center' }}><Icon name="receipt" size={23} color={colors.primary} /></View>
-          <View style={{ flex: 1, gap: 3 }}><Text style={{ color: colors.ink, fontSize: 16, fontWeight: '600' }}>Start a new split</Text><Text style={{ color: colors.muted, fontSize: 12 }}>A photo of the bill is all you need.</Text></View>
+          <View style={{ flex: 1, gap: 3 }}><Text style={{ color: colors.ink, fontSize: 16, fontWeight: '600' }}>Start a new split</Text><Text style={{ color: colors.muted, fontSize: 12 }}>{scanningAvailable ? 'A photo of the bill is all you need.' : 'Add the items and share a link.'}</Text></View>
         </View>
-        <Button title="Scan receipt" icon="camera" onPress={() => setCapture(true)} />
-        <Button title="Enter manually" secondary onPress={start} />
+        {/* A packaged build has no WebAssembly scanner, so offering a camera
+            that fails after the photo is taken would be worse than not
+            offering it. */}
+        {scanningAvailable ? (
+          <>
+            <Button title="Scan receipt" icon="camera" onPress={() => setCapture(true)} />
+            <Button title="Enter manually" secondary onPress={start} />
+          </>
+        ) : (
+          <Button title="Enter the bill" icon="plus" onPress={start} />
+        )}
       </Surface>
 
       {hasHistory ? <View style={{ marginTop: 28 }}>
