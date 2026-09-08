@@ -8,6 +8,8 @@ export type TrackedGuest = {
   itemCount: number;
   total: number;
   paymentStatus: 'UNPAID' | 'GUEST_REPORTED' | 'CONFIRMED' | 'FAILED' | 'REFUNDED';
+  /** Provider transaction id if this was recorded from a pasted message. */
+  paymentReference: string | null;
 };
 
 export type TrackedItem = {
@@ -24,6 +26,7 @@ export type SplitTracking = {
   restaurantName: string;
   splitDate: string;
   status: string;
+  currency: string;
   publicToken: string;
   guests: TrackedGuest[];
   items: TrackedItem[];
@@ -39,6 +42,7 @@ type Row = {
   restaurant_name: string;
   split_date: string;
   status: string;
+  currency: string;
   public_token: string;
   vat: number;
   service_charge: number;
@@ -52,7 +56,7 @@ type Row = {
     claims: { id: string; item_id: string; quantity: number; allocation_type: 'INDIVIDUAL' | 'SHARED'; participant_ids: string[] }[] | null;
     // payments.guest_id is unique, so PostgREST may embed this as an object,
     // an array, or null depending on how it resolves the relationship.
-    payments: { status: TrackedGuest['paymentStatus'] }[] | { status: TrackedGuest['paymentStatus'] } | null;
+    payments: { status: TrackedGuest['paymentStatus']; method?: string | null }[] | { status: TrackedGuest['paymentStatus']; method?: string | null } | null;
   }[];
 };
 
@@ -62,6 +66,14 @@ function paymentStatusOf(payments: Row['guests'][number]['payments']): TrackedGu
   return row?.status ?? 'UNPAID';
 }
 
+/** The transaction id a pasted confirmation was recorded under, if any. */
+function paymentReferenceOf(payments: Row['guests'][number]['payments']): string | null {
+  if (!payments) return null;
+  const row = Array.isArray(payments) ? payments[0] : payments;
+  const method = row?.method ?? '';
+  return method.startsWith('ref:') ? method.slice(4) : null;
+}
+
 /** Reads one of the host's splits with everything needed to track it live. */
 export async function fetchSplitTracking(splitId: string): Promise<SplitTracking> {
   await requireHostId();
@@ -69,11 +81,11 @@ export async function fetchSplitTracking(splitId: string): Promise<SplitTracking
   const { data, error } = await supabase
     .from('splits')
     .select(
-      `id, restaurant_name, split_date, status, public_token, vat, service_charge, discount, receipt_total,
+      `id, restaurant_name, split_date, status, currency, public_token, vat, service_charge, discount, receipt_total,
        items(id, name, quantity, unit_price, sort_order),
        guests(id, display_name, status,
          claims(id, item_id, quantity, allocation_type, participant_ids),
-         payments(status))`,
+         payments(status, method))`,
     )
     .eq('id', splitId)
     .single<Row>();
@@ -115,6 +127,7 @@ export async function fetchSplitTracking(splitId: string): Promise<SplitTracking
       itemCount: (guest.claims ?? []).reduce((sum, claim) => sum + claim.quantity, 0),
       total: totalsById.get(guest.id) ?? 0,
       paymentStatus: paymentStatusOf(guest.payments),
+      paymentReference: paymentReferenceOf(guest.payments),
     }))
     .sort((a, b) => b.total - a.total);
 
@@ -134,6 +147,7 @@ export async function fetchSplitTracking(splitId: string): Promise<SplitTracking
     restaurantName: data.restaurant_name,
     splitDate: data.split_date,
     status: data.status,
+    currency: data.currency ?? 'BDT',
     publicToken: data.public_token,
     guests,
     items: items.map((item) => ({
@@ -179,4 +193,37 @@ export function subscribeToSplit(splitId: string, onChange: () => void): () => v
     .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, onChange)
     .subscribe();
   return () => { void supabase.removeChannel(channel); };
+}
+
+/**
+ * Records several confirmed payments in one go.
+ *
+ * The provider's transaction reference is stored on the payment row so a host
+ * who pastes the same messages again is told they were already recorded rather
+ * than crediting anyone twice.
+ */
+export async function confirmPayments(
+  entries: { guestId: string; amount: number; reference: string | null }[],
+): Promise<void> {
+  if (entries.length === 0) return;
+  await requireHostId();
+  const now = new Date().toISOString();
+  const { error } = await supabase.from('payments').upsert(
+    entries.map(entry => ({
+      guest_id: entry.guestId,
+      amount: entry.amount,
+      status: 'CONFIRMED',
+      confirmed_at: now,
+      method: entry.reference ? `ref:${entry.reference}` : null,
+    })),
+    { onConflict: 'guest_id' },
+  );
+  if (error) throw new Error(error.message);
+}
+
+/** Transaction references already recorded against this split. */
+export function recordedReferences(tracking: SplitTracking): string[] {
+  return tracking.guests
+    .map(guest => guest.paymentReference)
+    .filter((reference): reference is string => Boolean(reference));
 }

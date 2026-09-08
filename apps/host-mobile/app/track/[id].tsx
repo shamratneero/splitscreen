@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button, Page, Surface, Toolbar, taka, ui } from '../../components/ui';
+import { RecordPayments } from '../../components/record-payments';
 import { Icon } from '../../components/icon';
 import { useTheme } from '../../components/theme';
-import { confirmPayment, fetchSplitTracking, subscribeToSplit, type SplitTracking, type TrackedGuest } from '../../lib/split-tracking';
+import { confirmPayment, confirmPayments, fetchSplitTracking, recordedReferences, subscribeToSplit, type SplitTracking, type TrackedGuest } from '../../lib/split-tracking';
 
 /** "2026-09-07" is a database value; hosts should read "7 Sep". */
 const formatDate = (value: string) => {
@@ -106,7 +107,7 @@ export default function TrackScreen() {
       <Text style={{ color: colors.ink, fontSize: 13, fontWeight: '600', marginTop: 8 }}>
         {data.confirmedCount} of {people} confirmed
       </Text>
-      <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>{taka(collected)} received</Text>
+      <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>{taka(collected, data.currency)} received</Text>
 
       <View style={{ flexDirection: 'row', backgroundColor: colors.soft, borderRadius: 12, padding: 4, marginTop: 18 }}>
         {(['people', 'items'] as const).map((key) => (
@@ -144,7 +145,7 @@ export default function TrackScreen() {
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                      <Text style={{ color: colors.ink, fontWeight: '600' }}>{taka(guest.total)}</Text>
+                      <Text style={{ color: colors.ink, fontWeight: '600' }}>{taka(guest.total, data.currency)}</Text>
                       <Text style={{ color: guest.paymentStatus === 'CONFIRMED' ? colors.primary : colors.amber, fontSize: 11, fontWeight: '600' }}>
                         {STATUS_LABEL[guest.paymentStatus]}
                       </Text>
@@ -179,12 +180,39 @@ export default function TrackScreen() {
                       {item.claimedBy.length ? ` · ${[...new Set(item.claimedBy)].join(', ')}` : ''}
                     </Text>
                   </View>
-                  <Text style={{ color: colors.ink, fontWeight: '600' }}>{taka(item.unitPrice * item.quantity)}</Text>
+                  <Text style={{ color: colors.ink, fontWeight: '600' }}>{taka(item.unitPrice * item.quantity, data.currency)}</Text>
                 </View>
               </View>
             ))}
           </Surface>
         )}
+
+        {/* Settling several guests at once from pasted confirmations — the
+            host's real chore is cross-checking amounts in another app. */}
+        {data.guests.some(guest => guest.paymentStatus !== 'CONFIRMED' && guest.total > 0) ? (
+          <RecordPayments
+            expected={data.guests.map(guest => ({
+              guestId: guest.id,
+              displayName: guest.displayName,
+              amount: guest.total,
+              settled: guest.paymentStatus === 'CONFIRMED',
+            }))}
+            currency={data.currency}
+            alreadySeen={recordedReferences(data)}
+            busy={busyGuest === 'batch'}
+            onConfirm={async entries => {
+              setBusyGuest('batch');
+              try {
+                await confirmPayments(entries);
+                await load();
+              } catch (cause) {
+                setError(cause instanceof Error ? cause.message : String(cause));
+              } finally {
+                setBusyGuest(null);
+              }
+            }}
+          />
+        ) : null}
 
         {data.unclaimed.length ? (
           <View style={{ backgroundColor: colors.soft, borderRadius: 16, padding: 14, marginTop: 14 }}>
@@ -192,7 +220,7 @@ export default function TrackScreen() {
             {data.unclaimed.map((entry) => (
               <View key={entry.name} style={[ui.row, { marginTop: 4 }]}>
                 <Text style={{ color: colors.muted, fontSize: 13 }}>{entry.name} ×{entry.quantity}</Text>
-                <Text style={{ color: colors.muted, fontSize: 13 }}>{taka(entry.value)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13 }}>{taka(entry.value, data.currency)}</Text>
               </View>
             ))}
           </View>

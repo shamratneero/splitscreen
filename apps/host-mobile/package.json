@@ -41,7 +41,8 @@
     "react-native-web": "~0.21.0",
     "tesseract.js": "^7.0.0",
     "@splitsave/receipt-parser": "workspace:*",
-    "@splitsave/types": "workspace:*"
+    "@splitsave/types": "workspace:*",
+    "@splitsave/payment-matcher": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",
