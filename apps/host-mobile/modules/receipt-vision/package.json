@@ -1,0 +1,10 @@
+{
+  "name": "receipt-vision",
+  "version": "1.0.0",
+  "description": "On-device receipt text recognition using Apple Vision.",
+  "main": "index.ts",
+  "license": "MIT",
+  "author": "SplitSave",
+  "homepage": "https://splitsave.app",
+  "private": true
+}
