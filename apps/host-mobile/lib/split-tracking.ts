@@ -1,4 +1,4 @@
-import { calculateSplit, type SplitClaim } from '@splitsave/split-engine';
+import { calculateSplit, type SplitClaim } from '@splitup/split-engine';
 import { requireHostId, supabase } from './supabase';
 
 export type TrackedGuest = {

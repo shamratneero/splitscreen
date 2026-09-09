@@ -8,13 +8,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   }
   return {
     ...config,
-    name: production ? 'SplitSave' : 'SplitSave Preview',
-    slug: 'splitsave',
+    name: production ? 'SplitUp' : 'SplitUp Preview',
+    slug: 'splitup',
     // Without this a packaged build ships the blank default icon.
     icon: './assets/icon.png',
     ios: {
       ...config.ios,
-      bundleIdentifier: bundleIdentifier ?? 'dev.splitsave.preview',
+      bundleIdentifier: bundleIdentifier ?? 'dev.splitup.preview',
       supportsTablet: false,
       infoPlist: {
         ...(config.ios?.infoPlist ?? {}),

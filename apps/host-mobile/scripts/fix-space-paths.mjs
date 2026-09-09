@@ -36,7 +36,7 @@ const edits = [
     to: 'shellScript = "/bin/bash \\"$PODS_TARGET_SRCROOT/../scripts/get-app-config-ios.sh\\"";',
   },
   {
-    file: path.join(ios, 'SplitSavePreview.xcodeproj', 'project.pbxproj'),
+    file: path.join(ios, 'SplitUpPreview.xcodeproj', 'project.pbxproj'),
     label: 'React Native bundler',
     // Backtick substitution whose output is a path, then executed unquoted.
     from: "`\\\"$NODE_BINARY\\\" --print \\\"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\\\"`",

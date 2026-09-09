@@ -16,12 +16,12 @@ export default defineConfig({
   webServer: [
     { command: 'node tests/fixtures/backend.mjs', url: `${backend}/health`, reuseExistingServer: false },
     {
-      command: 'corepack pnpm --filter @splitsave/guest-web exec next dev --hostname 127.0.0.1 --port 3002',
+      command: 'corepack pnpm --filter @splitup/guest-web exec next dev --hostname 127.0.0.1 --port 3002',
       url: 'http://127.0.0.1:3002', reuseExistingServer: false, timeout: 120_000,
       env: { ADDASPLIT_BROWSER_TEST: '1', NEXT_PUBLIC_SUPABASE_URL: backend, NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key' },
     },
     {
-      command: 'corepack pnpm --filter @splitsave/host-mobile prepare:ocr && corepack pnpm --filter @splitsave/host-mobile exec expo start --localhost --port 8082 --clear',
+      command: 'corepack pnpm --filter @splitup/host-mobile prepare:ocr && corepack pnpm --filter @splitup/host-mobile exec expo start --localhost --port 8082 --clear',
       url: 'http://127.0.0.1:8082/status', reuseExistingServer: false, timeout: 120_000,
       env: { CI: '1', BROWSER: 'none', EXPO_NO_DOTENV: '1', EXPO_PUBLIC_SUPABASE_URL: backend,
         EXPO_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key', EXPO_PUBLIC_GUEST_URL: 'http://127.0.0.1:3002' },

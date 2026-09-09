@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { parseTransfers, reconcile, suggestFor, type ExpectedPayment } from '@splitsave/payment-matcher';
+import { parseTransfers, reconcile, suggestFor, type ExpectedPayment } from '@splitup/payment-matcher';
 import { Surface, taka, ui } from './ui';
 import { useTheme } from './theme';
 

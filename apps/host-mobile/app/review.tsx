@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { calculateSplit } from '@splitsave/split-engine';
+import { calculateSplit } from '@splitup/split-engine';
 import { Button, Heading, Page, Surface, Toolbar, taka, ui } from '../components/ui';
 import { Icon } from '../components/icon';
 import { useTheme } from '../components/theme';
@@ -14,13 +14,27 @@ export default function ReviewScreen() {
   const { draft, update } = useDraft();
   const router = useRouter();
   const subtotal = draft.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+
+  /**
+   * The printed total, or what the items add up to when it is blank.
+   *
+   * Creating a split required the receipt total to match the items exactly, so
+   * a scan that missed the total — or a bill typed by hand — left the button
+   * permanently greyed out with no way forward. Treat an empty field as
+   * agreement with the items; a host who wants the check enters the printed
+   * figure and gets the mismatch warning as before.
+   */
+  const expectedTotal = subtotal + (money(draft.vat) ?? 0) + (money(draft.service) ?? 0) - (money(draft.discount) ?? 0);
+  const effectiveReceiptTotal = draft.receiptTotal.trim() === '' || money(draft.receiptTotal) === 0
+    ? String(Math.max(0, expectedTotal))
+    : draft.receiptTotal;
   const result = useMemo(() => {
-    const values = [draft.vat, draft.service, draft.discount, draft.receiptTotal].map(money);
+    const values = [draft.vat, draft.service, draft.discount, effectiveReceiptTotal].map(money);
     if (values.some(value => value === null) || !draft.items.length || !draft.restaurant.trim() || draft.items.some(item => !item.name.trim() || item.quantity < 1 || !Number.isSafeInteger(item.quantity) || !Number.isSafeInteger(item.price))) return null;
     const [vat, serviceCharge, discount, receiptTotal] = values as number[];
     if (discount > subtotal) return null;
     try { return calculateSplit({ items: draft.items.map(item => ({ ...item, unitPrice: item.price })), claims: [], guests: [], vat, serviceCharge, discount, receiptTotal }); } catch { return null; }
-  }, [draft, subtotal]);
+  }, [draft, subtotal, effectiveReceiptTotal]);
   const edit = (id: string, patch: Partial<DraftItem>) => update({ items: draft.items.map(item => item.id === id ? { ...item, ...patch } : item) });
   const inputStyle = { color: colors.ink, backgroundColor: colors.input, borderRadius: 10, minHeight: 44, paddingHorizontal: 12, fontSize: 15 };
 

@@ -1,4 +1,4 @@
--- SplitSave initial schema. All money is integer taka. Apply with Supabase CLI after linking a project.
+-- SplitUp initial schema. All money is integer taka. Apply with Supabase CLI after linking a project.
 create extension if not exists pgcrypto;
 
 create type public.split_status as enum ('DRAFT','RECEIPT_CAPTURED','REVIEW_REQUIRED','READY_TO_SHARE','CLAIMING','ALL_ITEMS_ASSIGNED','AWAITING_PAYMENT','SETTLED');
@@ -71,7 +71,7 @@ grant execute on function public.claim_item(uuid, uuid, uuid, integer) to anon, 
 
 -- Confirmed-received amounts are host-entered (see report_guest_payment /
 -- host tracking); "amount due" is always computed live by the shared
--- @splitsave/split-engine over real items+claims, never duplicated in SQL.
+-- @splitup/split-engine over real items+claims, never duplicated in SQL.
 alter table public.payments alter column amount drop not null;
 alter table public.payments drop constraint payments_amount_check;
 alter table public.payments add constraint payments_amount_check check (amount is null or amount >= 0);

@@ -1,4 +1,4 @@
-# SplitSave implementation plan
+# SplitUp implementation plan
 
 ## Implemented
 

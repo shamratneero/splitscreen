@@ -67,7 +67,7 @@ export default function SignInScreen() {
         {desktop ? <View style={{ flex: 1, paddingBottom: 20 }}>
           <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 2, marginBottom: 22 }}>FOR THE WHOLE TABLE</Text>
           <Text style={{ color: colors.ink, fontFamily: editorialFont, fontSize: 58, lineHeight: 64, letterSpacing: -2 }}>Good food.{ '\n' }Fair splits.</Text>
-          <Text style={{ color: colors.muted, fontSize: 16, lineHeight: 26, marginTop: 20, maxWidth: 300 }}>Keep the conversation going. SplitSave takes care of who owes what.</Text>
+          <Text style={{ color: colors.muted, fontSize: 16, lineHeight: 26, marginTop: 20, maxWidth: 300 }}>Keep the conversation going. SplitUp takes care of who owes what.</Text>
           <View style={{ gap: 20, marginTop: 38 }}>
             {(['Add the receipt', 'Let everyone choose their items', 'Keep track of payments'] as const).map((label, i) => <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}><Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600', fontVariant: ['tabular-nums'] }}>0{i + 1}</Text><Text style={{ color: colors.ink, fontSize: 14 }}>{label}</Text></View>)}
           </View>

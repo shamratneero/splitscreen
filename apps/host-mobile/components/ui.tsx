@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { GlassSurface } from './glass-surface';
 import { Icon, type IconName } from './icon';
 import { useTheme } from './theme';
-import { DEFAULT_CURRENCY, formatMoney } from '@splitsave/types';
+import { DEFAULT_CURRENCY, formatMoney } from '@splitup/types';
 
 /**
  * Formats an integer minor-unit amount in the given currency, defaulting to the
@@ -53,7 +53,7 @@ export function Surface({ children, style }: PropsWithChildren<{ style?: StylePr
 }
 export function Toolbar({ title, onBack, right }: { title?: string; onBack?: () => void; right?: ReactNode }) {
   const { colors } = useTheme();
-  return <View style={ui.toolbar}>{onBack ? <RoundButton icon="back" label="Go back" onPress={onBack} /> : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}><View style={{ width: 30, height: 32, borderRadius: 8, backgroundColor: '#245C45', alignItems: 'center', justifyContent: 'center' }}><Icon name="receipt" size={20} color="#FFF" /></View><Text style={[ui.wordmark, { color: colors.ink }]}>SplitSave</Text></View>}{title && <Text numberOfLines={1} style={{ flexShrink: 1, marginHorizontal: 12, fontSize: 13, fontWeight: '500', color: colors.muted }}>{title}</Text>}{right ?? <View style={{ width: 30 }} />}</View>;
+  return <View style={ui.toolbar}>{onBack ? <RoundButton icon="back" label="Go back" onPress={onBack} /> : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}><View style={{ width: 30, height: 32, borderRadius: 8, backgroundColor: '#245C45', alignItems: 'center', justifyContent: 'center' }}><Icon name="receipt" size={20} color="#FFF" /></View><Text style={[ui.wordmark, { color: colors.ink }]}>SplitUp</Text></View>}{title && <Text numberOfLines={1} style={{ flexShrink: 1, marginHorizontal: 12, fontSize: 13, fontWeight: '500', color: colors.muted }}>{title}</Text>}{right ?? <View style={{ width: 30 }} />}</View>;
 }
 export const ui = StyleSheet.create({
   viewport: { flex: 1, alignItems: 'center' }, page: { flex: 1, width: '100%' },

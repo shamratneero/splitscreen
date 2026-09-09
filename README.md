@@ -1,4 +1,4 @@
-# SplitSave
+# SplitUp
 
 **Good food. Fair splits.** A bill-splitting product for Bangladesh: the host
 enters a receipt, friends claim what they ordered through a browser link, and
@@ -96,7 +96,7 @@ With Xcode installed, its license accepted, first-launch setup completed, and an
 iOS simulator runtime available:
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer corepack pnpm --filter @splitsave/host-mobile ios:native
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer corepack pnpm --filter @splitup/host-mobile ios:native
 ```
 
 Xcode 26+ and iOS 26 are needed to inspect actual Liquid Glass. See
@@ -109,10 +109,10 @@ Apple bundle identifier. No signed build or App Store submission has been made.
 ```bash
 corepack pnpm test
 corepack pnpm typecheck
-corepack pnpm --filter @splitsave/guest-web build
-corepack pnpm --filter @splitsave/host-mobile build:web
-corepack pnpm --filter @splitsave/host-mobile build:ios:js
-corepack pnpm --filter @splitsave/host-mobile exec expo install --check
+corepack pnpm --filter @splitup/guest-web build
+corepack pnpm --filter @splitup/host-mobile build:web
+corepack pnpm --filter @splitup/host-mobile build:ios:js
+corepack pnpm --filter @splitup/host-mobile exec expo install --check
 ```
 
 Browser checks (start a local test backend on 54329, Expo on 8082, and Next.js on 3002):

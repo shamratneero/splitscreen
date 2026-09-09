@@ -1,10 +1,10 @@
-const STORAGE_KEY = "splitsave.session";
+const STORAGE_KEY = "splitup.session";
 /**
- * The app shipped as AddaSplit and then briefly as SplitPay. A guest who
+ * The app shipped as AddaSplit, then SplitPay, then SplitSave. A guest who
  * claimed items under either name would otherwise come back as a stranger and
  * lose them, so adopt an older id when no current one exists. Newest first.
  */
-const LEGACY_STORAGE_KEYS = ["splitpay.session", "addasplit.session"];
+const LEGACY_STORAGE_KEYS = ["splitsave.session", "splitpay.session", "addasplit.session"];
 
 /**
  * A RFC 4122 v4 UUID, without assuming a secure context.

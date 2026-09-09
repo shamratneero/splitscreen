@@ -1,4 +1,4 @@
-import { calculateSplit } from '@splitsave/split-engine';
+import { calculateSplit } from '@splitup/split-engine';
 import { requireHostId, supabase } from './supabase';
 
 export type SplitSummary = {

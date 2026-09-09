@@ -1,5 +1,5 @@
 {
-  "name": "@splitsave/guest-web",
+  "name": "@splitup/guest-web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,12 +9,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@splitsave/split-engine": "workspace:*",
+    "@splitup/split-engine": "workspace:*",
     "@supabase/supabase-js": "^2.115.0",
     "next": "^15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@splitsave/types": "workspace:*"
+    "@splitup/types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",

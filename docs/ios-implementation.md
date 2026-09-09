@@ -22,7 +22,7 @@ application or a web page wrapped in an iOS WebView.
 
 The host is on Expo SDK 54, React Native 0.81.5, and its supported React 19.1.0.
 Metro scopes React to the host so the Next guest's React version cannot enter the
-host bundle. Keep `corepack pnpm --filter @splitsave/host-mobile exec expo install --check`
+host bundle. Keep `corepack pnpm --filter @splitup/host-mobile exec expo install --check`
 passing when changing native dependencies.
 
 References: [Expo GlassEffect](https://docs.expo.dev/versions/v54.0.0/sdk/glass-effect/),
@@ -39,7 +39,7 @@ corepack pnpm dev:host:web --clear
 Native iOS, from the repository root:
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer corepack pnpm --filter @splitsave/host-mobile ios:native
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer corepack pnpm --filter @splitup/host-mobile ios:native
 ```
 
 This generates the iOS project and compiles it with Xcode. Native dependency
@@ -57,14 +57,14 @@ An iOS JavaScript export is a useful check but does not compile Swift/Objective-
 or verify UIKit rendering:
 
 ```bash
-corepack pnpm --filter @splitsave/host-mobile build:ios:js
+corepack pnpm --filter @splitup/host-mobile build:ios:js
 PLAYWRIGHT_CHANNEL=chrome corepack pnpm test:host:web
 ```
 
 ## Build configuration for distribution
 
 `eas.json` has simulator and App Store build profiles. A preview has bundle ID
-`dev.splitsave.preview`. A production build requires `IOS_BUNDLE_IDENTIFIER` from
+`dev.splitup.preview`. A production build requires `IOS_BUNDLE_IDENTIFIER` from
 your registered Apple application; it deliberately fails instead of assuming one.
 
 Before a TestFlight build:

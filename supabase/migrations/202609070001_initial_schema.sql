@@ -1,4 +1,4 @@
--- SplitSave initial schema. All money is integer taka. Apply with Supabase CLI after linking a project.
+-- SplitUp initial schema. All money is integer taka. Apply with Supabase CLI after linking a project.
 create extension if not exists pgcrypto;
 
 create type public.split_status as enum ('DRAFT','RECEIPT_CAPTURED','REVIEW_REQUIRED','READY_TO_SHARE','CLAIMING','ALL_ITEMS_ASSIGNED','AWAITING_PAYMENT','SETTLED');

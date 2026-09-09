@@ -1,5 +1,5 @@
 export function Brand() {
-  return <div className="brand"><span className="brand-mark" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Zm3 4h6M9 11h6M9 15h3" /></svg></span><span>SplitSave</span></div>;
+  return <div className="brand"><span className="brand-mark" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Zm3 4h6M9 11h6M9 15h3" /></svg></span><span>SplitUp</span></div>;
 }
 
 export function BillSteps({ stage }: { stage: "claim" | "confirm" | "pay" | "done" }) {

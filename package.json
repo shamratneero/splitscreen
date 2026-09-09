@@ -1,5 +1,5 @@
 {
-  "name": "splitsave",
+  "name": "splitup",
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.18.3",
@@ -8,11 +8,11 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "corepack pnpm --filter @splitsave/split-engine test && corepack pnpm --filter @splitsave/receipt-parser test && corepack pnpm --filter @splitsave/types test && corepack pnpm --filter @splitsave/payment-matcher test",
-    "typecheck": "corepack pnpm --filter @splitsave/split-engine typecheck && corepack pnpm --filter @splitsave/guest-web typecheck && corepack pnpm --filter @splitsave/host-mobile typecheck && corepack pnpm --filter @splitsave/receipt-parser typecheck && corepack pnpm --filter @splitsave/types typecheck && corepack pnpm --filter @splitsave/payment-matcher typecheck",
-    "dev:guest": "corepack pnpm --filter @splitsave/guest-web dev",
-    "dev:host": "corepack pnpm --filter @splitsave/host-mobile start",
-    "dev:host:web": "corepack pnpm --filter @splitsave/host-mobile web",
+    "test": "corepack pnpm --filter @splitup/split-engine test && corepack pnpm --filter @splitup/receipt-parser test && corepack pnpm --filter @splitup/types test && corepack pnpm --filter @splitup/payment-matcher test",
+    "typecheck": "corepack pnpm --filter @splitup/split-engine typecheck && corepack pnpm --filter @splitup/guest-web typecheck && corepack pnpm --filter @splitup/host-mobile typecheck && corepack pnpm --filter @splitup/receipt-parser typecheck && corepack pnpm --filter @splitup/types typecheck && corepack pnpm --filter @splitup/payment-matcher typecheck",
+    "dev:guest": "corepack pnpm --filter @splitup/guest-web dev",
+    "dev:host": "corepack pnpm --filter @splitup/host-mobile start",
+    "dev:host:web": "corepack pnpm --filter @splitup/host-mobile web",
     "test:host:web": "playwright test"
   },
   "devDependencies": {

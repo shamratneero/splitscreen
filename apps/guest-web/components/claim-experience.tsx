@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { calculateSplit } from "@splitsave/split-engine";
-import { currencyOf, formatMoney } from "@splitsave/types";
+import { calculateSplit } from "@splitup/split-engine";
+import { currencyOf, formatMoney } from "@splitup/types";
 import { BillSteps } from "./bill-chrome";
 import { QuantityStepper } from "./quantity-stepper";
 import { ShareItemModal } from "./share-item-modal";
@@ -483,7 +483,7 @@ export function ClaimExperience({ token, initialSplit }: { token: string; initia
     return (
       <section className="screen">
         <header className="split-header">
-          <p className="eyebrow">{split.split.restaurantName || "SplitSave"}</p>
+          <p className="eyebrow">{split.split.restaurantName || "SplitUp"}</p>
           <h1>Nothing to claim yet</h1>
           <p>{hostName} hasn’t added any items to this bill. Ask them to finish it, then reopen this link.</p>
         </header>

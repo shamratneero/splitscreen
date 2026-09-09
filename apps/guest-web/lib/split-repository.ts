@@ -1,4 +1,4 @@
-import type { SplitClaim, SplitGuest, SplitItem } from "@splitsave/split-engine";
+import type { SplitClaim, SplitGuest, SplitItem } from "@splitup/split-engine";
 import { supabase } from "./supabase";
 
 /** The exact shape returned by the public.get_public_split RPC. */

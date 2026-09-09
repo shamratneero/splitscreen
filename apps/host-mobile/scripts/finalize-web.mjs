@@ -13,7 +13,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 const file = new URL('../dist/index.html', import.meta.url);
 let html = await readFile(file, 'utf8');
 
-html = html.replace(/<title>.*?<\/title>/, '<title>SplitSave</title>');
+html = html.replace(/<title>.*?<\/title>/, '<title>SplitUp</title>');
 
 // viewport-fit=cover lets the app paint under the notch and home indicator,
 // which is what stops a standalone app looking letterboxed on a modern iPhone.
@@ -31,7 +31,7 @@ const head = [
   '<meta name="theme-color" content="#245C45">',
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
-  '<meta name="apple-mobile-web-app-title" content="SplitSave">',
+  '<meta name="apple-mobile-web-app-title" content="SplitUp">',
   // Translucent lets the app background run to the top of the screen instead
   // of leaving an opaque bar in a colour that is not ours.
   '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',

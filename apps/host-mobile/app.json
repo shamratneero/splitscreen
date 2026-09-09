@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "SplitSave",
-    "slug": "splitsave",
-    "scheme": "splitsave",
+    "name": "SplitUp",
+    "slug": "splitup",
+    "scheme": "splitup",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",

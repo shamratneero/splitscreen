@@ -1,4 +1,4 @@
-# Deploying SplitSave
+# Deploying SplitUp
 
 The QR code encodes whatever `EXPO_PUBLIC_GUEST_URL` points at. During local
 development that is `localhost`, which **a phone cannot resolve** — the link
@@ -37,13 +37,13 @@ The guest app is a normal Next.js app, so Vercel hosts it on the free tier.
 
    Both are public by design; the anon key is protected by RLS. There is no
    secret to set — receipt scanning runs in the host's browser, not on a server.
-5. Deploy. You get something like `https://splitsave.vercel.app`.
+5. Deploy. You get something like `https://splitup.vercel.app`.
 
 Then point the host app at it and restart Expo:
 
 ```bash
 # apps/host-mobile/.env.local
-EXPO_PUBLIC_GUEST_URL=https://splitsave.vercel.app
+EXPO_PUBLIC_GUEST_URL=https://splitup.vercel.app
 ```
 
 Now any scanned QR opens a real URL from any network. The anon key is safe in
@@ -106,7 +106,7 @@ annually, so every year paid early is wasted.
 
 The host is an Expo app, so it does not go through Vercel.
 
-- **Fastest:** `corepack pnpm --filter @splitsave/host-mobile start`, then open
+- **Fastest:** `corepack pnpm --filter @splitup/host-mobile start`, then open
   the project in **Expo Go** on your phone. No Apple account needed.
 - **A real installable build:** use EAS —
   `npx eas build --platform ios --profile preview`. Needs an Apple Developer
@@ -154,7 +154,7 @@ project generates at any time:
 
 ```bash
 cd apps/host-mobile
-IOS_BUNDLE_IDENTIFIER=com.yourcompany.splitsave APP_VARIANT=production \
+IOS_BUNDLE_IDENTIFIER=com.yourcompany.splitup APP_VARIANT=production \
   npx expo prebuild --platform ios --no-install --clean
 ```
 
