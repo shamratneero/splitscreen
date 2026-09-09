@@ -10,8 +10,8 @@
     "build:ios:js": "expo export --platform ios",
     "prebuild:ios": "expo prebuild --platform ios --no-install",
     "ios:native": "expo run:ios",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "prepare:ocr": "node scripts/prepare-ocr.mjs"
   },
